@@ -39,6 +39,13 @@ val ProxyEnabledKey = booleanPreferencesKey("proxyEnabled")
 val ProxyUrlKey = stringPreferencesKey("proxyUrl")
 val ProxyTypeKey = stringPreferencesKey("proxyType")
 
+/**
+ * 洛雪音源
+ */
+val LxSourceScriptKey = stringPreferencesKey("lxSourceScript")
+val LxSourceNameKey = stringPreferencesKey("lxSourceName")
+val LxSourceQualityKey = stringPreferencesKey("lxSourceQuality")
+
 // sync time tracks
 val LastFullSyncKey = longPreferencesKey("lastFullSync")
 val LastLikeSongSyncKey = longPreferencesKey("lastLikeSongSync")

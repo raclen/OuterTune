@@ -26,6 +26,9 @@ data class MediaMetadata(
     private val dateModified: LocalDateTime? = null, // file property
     val inLibrary: LocalDateTime? = null, // doubles as "date added"
     val setVideoId: String? = null,
+    val source: String? = null,
+    val sourceId: String? = null,
+    val sourceData: String? = null,
     val isLocal: Boolean = false,
     val localPath: String? = null,
     val liked: Boolean = false,
@@ -64,6 +67,9 @@ data class MediaMetadata(
         date = date,
         dateModified = dateModified,
         liked = liked,
+        source = source,
+        sourceId = sourceId,
+        sourceData = sourceData,
         isLocal = isLocal,
         inLibrary = if (isLocal) LocalDateTime.now() else null,
         localPath = localPath
@@ -147,6 +153,9 @@ fun Song.toMediaMetadata() = MediaMetadata(
     dateModified = song.dateModified,
     inLibrary = song.inLibrary,
     liked = song.liked,
+    source = song.source,
+    sourceId = song.sourceId,
+    sourceData = song.sourceData,
     isLocal = song.isLocal,
     localPath = song.localPath
 )

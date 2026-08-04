@@ -19,11 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
-import androidx.compose.material.icons.rounded.AccountCircle
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Interests
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.Storage
@@ -82,9 +82,9 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             PreferenceEntry(
-                title = { Text(stringResource(R.string.grp_account_sync)) },
-                icon = { Icon(Icons.Rounded.AccountCircle, null) },
-                onClick = { navController.navigate("settings/account_sync") }
+                title = { Text("洛雪音源") },
+                icon = { Icon(Icons.Rounded.MusicNote, null) },
+                onClick = { navController.navigate("settings/lx_source") }
             )
             PreferenceEntry(
                 title = { Text(stringResource(R.string.grp_library_and_content)) },

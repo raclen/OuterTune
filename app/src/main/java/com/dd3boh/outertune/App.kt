@@ -48,6 +48,7 @@ import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.reportException
 import com.zionhuang.innertube.YouTube
+import com.dd3boh.outertune.source.lx.LxSourceRuntime
 import com.zionhuang.innertube.models.YouTubeLocale
 import com.zionhuang.kugou.KuGou
 import dagger.hilt.android.HiltAndroidApp
@@ -69,6 +70,7 @@ class App : Application(), SingletonImageLoader.Factory {
     @OptIn(DelicateCoroutinesApi::class)
     override fun onCreate() {
         super.onCreate()
+        LxSourceRuntime.initialize(this)
 
         if (BuildConfig.DEBUG) {
             System.setProperty("kotlinx.coroutines.debug", "on")

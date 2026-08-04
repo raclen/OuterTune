@@ -111,6 +111,7 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.playback.queues.Queue
 import com.dd3boh.outertune.playback.queues.YouTubeQueue
+import com.dd3boh.outertune.source.lx.LxSourceRuntime
 import com.dd3boh.outertune.utils.CoilBitmapLoader
 import com.dd3boh.outertune.utils.NetworkConnectivityObserver
 import com.dd3boh.outertune.utils.SyncUtils
@@ -704,6 +705,14 @@ class MusicService : MediaLibraryService(),
             }
 
             Log.d(TAG, "PLAYING: remote song (online fetch)")
+
+            if (song?.source != null) {
+                val streamUrl = runBlocking(Dispatchers.IO) {
+                    LxSourceRuntime.resolve(song)
+                }
+                songUrlCache[mediaId] = streamUrl to System.currentTimeMillis() + 30 * 60 * 1000L
+                return@Factory dataSpec.withUri(streamUrl.toUri())
+            }
 
             val playbackData = runBlocking(Dispatchers.IO) {
                 val audioQuality by enumPreference(this@MusicService, AudioQualityKey, AudioQuality.AUTO)

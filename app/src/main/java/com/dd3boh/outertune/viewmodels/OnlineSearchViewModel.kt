@@ -1,68 +1,37 @@
 package com.dd3boh.outertune.viewmodels
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.dd3boh.outertune.models.ItemsPage
-import com.dd3boh.outertune.utils.reportException
-import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.pages.SearchSummaryPage
+import com.dd3boh.outertune.models.MediaMetadata
+import com.dd3boh.outertune.source.lx.KuwoSearchClient
+import com.dd3boh.outertune.source.lx.toMediaMetadata
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.net.URLDecoder
 import javax.inject.Inject
 
 @HiltViewModel
 class OnlineSearchViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    val query = savedStateHandle.get<String>("query")!!
-    val filter = MutableStateFlow<YouTube.SearchFilter?>(null)
-    var summaryPage by mutableStateOf<SearchSummaryPage?>(null)
-    val viewStateMap = mutableStateMapOf<String, ItemsPage?>()
+    val query = URLDecoder.decode(savedStateHandle.get<String>("query").orEmpty(), "UTF-8")
+    private val _viewState = MutableStateFlow(LxSearchViewState(isLoading = true))
+    val viewState = _viewState.asStateFlow()
 
     init {
         viewModelScope.launch {
-            filter.collect { filter ->
-                if (filter == null) {
-                    if (summaryPage == null) {
-                        YouTube.searchSummary(query)
-                            .onSuccess {
-                                summaryPage = it
-                            }
-                            .onFailure {
-                                reportException(it)
-                            }
-                    }
-                } else {
-                    if (viewStateMap[filter.value] == null) {
-                        YouTube.search(query, filter)
-                            .onSuccess { result ->
-                                viewStateMap[filter.value] = ItemsPage(result.items.distinctBy { it.id }, result.continuation)
-                            }
-                            .onFailure {
-                                reportException(it)
-                            }
-                    }
-                }
-            }
-        }
-    }
-
-    fun loadMore() {
-        val filter = filter.value?.value
-        viewModelScope.launch {
-            if (filter == null) return@launch
-            val viewState = viewStateMap[filter] ?: return@launch
-            val continuation = viewState.continuation
-            if (continuation != null) {
-                val searchResult = YouTube.searchContinuation(continuation).getOrNull() ?: return@launch
-                viewStateMap[filter] = ItemsPage((viewState.items + searchResult.items).distinctBy { it.id }, searchResult.continuation)
-            }
+            KuwoSearchClient.search(query)
+                .onSuccess { songs -> _viewState.value = LxSearchViewState(items = songs.map { it.toMediaMetadata() }) }
+                .onFailure { error -> _viewState.value = LxSearchViewState(error = error.message ?: "搜索失败") }
         }
     }
 }
+
+data class LxSearchViewState(
+    val items: List<MediaMetadata> = emptyList(),
+    val isLoading: Boolean = false,
+    val error: String? = null,
+)

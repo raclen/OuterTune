@@ -75,6 +75,7 @@ ktor-serialization-json = { group = "io.ktor", name = "ktor-serialization-kotlin
 # misc
 aboutlibraries-compose-m3 = { module = "com.mikepenz:aboutlibraries-compose-m3", version.ref = "aboutLibraries" }
 brotli = { group = "org.brotli", name = "dec", version = "0.1.2" }
+quickjs = { group = "wang.harlon.quickjs", name = "wrapper-android", version = "2.4.0" }
 
 desugaring = { group = "com.android.tools", name = "desugar_jdk_libs", version = "2.1.5" }
 

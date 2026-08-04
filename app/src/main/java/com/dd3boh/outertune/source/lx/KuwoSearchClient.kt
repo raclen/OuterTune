@@ -1,0 +1,110 @@
+package com.dd3boh.outertune.source.lx
+
+import android.text.Html
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.okhttp.OkHttp
+import io.ktor.client.request.get
+import io.ktor.client.request.parameter
+import io.ktor.client.plugins.defaultRequest
+import io.ktor.http.isSuccess
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonPrimitive
+
+object KuwoSearchClient {
+    private const val SEARCH_URL = "https://search.kuwo.cn/r.s"
+    private const val COVER_URL = "https://artistpicserver.kuwo.cn/pic.web"
+
+    private val client = HttpClient(OkHttp) {
+        defaultRequest {
+            headers.append("User-Agent", "Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36")
+        }
+    }
+
+    suspend fun search(query: String, page: Int = 1, limit: Int = 30): Result<List<LxMusicInfo>> = runCatching {
+        val response = client.get(SEARCH_URL) {
+            parameter("client", "kt")
+            parameter("all", query)
+            parameter("pn", (page - 1).coerceAtLeast(0))
+            parameter("rn", limit)
+            parameter("uid", "794762570")
+            parameter("ver", "kwplayer_ar_9.2.2.1")
+            parameter("vipver", "1")
+            parameter("show_copyright_off", "1")
+            parameter("newver", "1")
+            parameter("ft", "music")
+            parameter("cluster", "0")
+            parameter("strategy", "2012")
+            parameter("encoding", "utf8")
+            parameter("rformat", "json")
+            parameter("vermerge", "1")
+            parameter("mobi", "1")
+            parameter("issubtitle", "1")
+        }
+        check(response.status.isSuccess()) { "酷我搜索请求失败：${response.status}" }
+        val root = lxJson.parseToJsonElement(response.body<String>()) as JsonObject
+        val items = root["abslist"] as? JsonArray ?: JsonArray(emptyList())
+        items.mapNotNull { (it as? JsonObject)?.toMusicInfo() }
+    }
+
+    private suspend fun JsonObject.toMusicInfo(): LxMusicInfo? {
+        val songId = string("MUSICRID").removePrefix("MUSIC_").ifBlank { return null }
+        val title = decode(string("SONGNAME").ifBlank { string("NAME") })
+        val singer = decode(string("ARTIST"))
+        val albumName = decode(string("ALBUM"))
+        val qualities = parseQualities(string("N_MINFO").ifBlank { string("MINFO") })
+        return LxMusicInfo(
+            id = "kw_$songId",
+            songmid = songId,
+            name = title,
+            singer = singer,
+            source = "kw",
+            interval = string("DURATION").toIntOrNull()?.let { "%02d:%02d".format(it / 60, it % 60) },
+            meta = LxMusicMeta(
+                songId = songId,
+                albumName = albumName,
+                albumId = string("ALBUMID").takeIf(String::isNotBlank),
+                picUrl = loadCover(songId),
+                qualitys = qualities,
+                _qualitys = qualities.associate { it.type to LxQualityInfo(it.size) },
+            ),
+        )
+    }
+
+    private suspend fun loadCover(songId: String): String? = runCatching {
+        val response = client.get(COVER_URL) {
+            parameter("corp", "kuwo")
+            parameter("type", "rid_pic")
+            parameter("pictype", "500")
+            parameter("size", "500")
+            parameter("rid", songId)
+        }
+        response.body<String>().trim().takeIf { it.startsWith("http") }?.replace("http://", "https://")
+    }.getOrNull()
+
+    private fun parseQualities(value: String): List<LxQuality> {
+        val qualityOrder = listOf("128k", "320k", "flac", "flac24bit")
+        val found = mutableMapOf<String, String?>()
+        value.split(';').forEach { part ->
+            val fields = part.split(',').associate { field ->
+                field.substringBefore(':') to field.substringAfter(':', "")
+            }
+            val type = when (fields["bitrate"]?.toIntOrNull()) {
+                128 -> "128k"
+                320 -> "320k"
+                2000 -> "flac"
+                4000, 20900, 22000 -> "flac24bit"
+                else -> null
+            }
+            if (type != null) found[type] = fields["size"]
+        }
+        if (found.isEmpty()) found["128k"] = null
+        return qualityOrder.mapNotNull { type -> found[type]?.let { LxQuality(type, it) } ?: if (found.containsKey(type)) LxQuality(type) else null }
+    }
+
+    private fun JsonObject.string(key: String) = this[key]?.jsonPrimitive?.contentOrNull.orEmpty()
+
+    private fun decode(value: String): String = Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
+}

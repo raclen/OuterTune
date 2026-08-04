@@ -38,6 +38,9 @@ data class SongEntity(
     val dateDownload: LocalDateTime? = null, // doubles as "isDownloaded" for new downloader system
     val liked: Boolean = false,
     val likedDate: LocalDateTime? = null,
+    val source: String? = null,
+    val sourceId: String? = null,
+    val sourceData: String? = null,
 
     // misc non-critical tags
     val trackNumber: Int? = null,
@@ -60,9 +63,11 @@ data class SongEntity(
         likedDate = if (!liked) LocalDateTime.now() else null,
         inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary
     ).also {
-        CoroutineScope(syncCoroutine).launch {
-            YouTube.likeVideo(id, !liked)
-            this.cancel()
+        if (source == null) {
+            CoroutineScope(syncCoroutine).launch {
+                YouTube.likeVideo(id, !liked)
+                this.cancel()
+            }
         }
     }
 

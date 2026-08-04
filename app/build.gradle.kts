@@ -12,6 +12,7 @@ plugins {
     alias(libs.plugins.hilt)
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.aboutlibraries)
 }
 
@@ -242,6 +243,7 @@ dependencies {
     implementation(libs.room.ktx)
 
     implementation(libs.apache.lang3)
+    implementation(libs.quickjs)
 
     implementation(libs.hilt)
     ksp(libs.hilt.compiler)
@@ -249,6 +251,7 @@ dependencies {
     coreLibraryDesugaring(libs.desugaring)
 
     implementation(libs.ktor.client.core)
+    implementation(libs.ktor.client.okhttp)
     implementation(libs.ktor.serialization.json)
 
     // modules

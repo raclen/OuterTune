@@ -173,6 +173,7 @@ import com.dd3boh.outertune.ui.screens.settings.InterfaceSettings
 import com.dd3boh.outertune.ui.screens.settings.LibrariesScreen
 import com.dd3boh.outertune.ui.screens.settings.LibrarySettings
 import com.dd3boh.outertune.ui.screens.settings.LocalPlayerSettings
+import com.dd3boh.outertune.ui.screens.settings.LxSourceSettings
 import com.dd3boh.outertune.ui.screens.settings.LyricsSettings
 import com.dd3boh.outertune.ui.screens.settings.PlayerSettings
 import com.dd3boh.outertune.ui.screens.settings.SettingsScreen
@@ -702,6 +703,9 @@ class MainActivity : ComponentActivity() {
                                     }
                                     composable("settings/account_sync") {
                                         AccountSyncSettings(navController, scrollBehavior)
+                                    }
+                                    composable("settings/lx_source") {
+                                        LxSourceSettings(navController, scrollBehavior)
                                     }
                                     composable("settings/player") {
                                         PlayerSettings(navController, scrollBehavior)
