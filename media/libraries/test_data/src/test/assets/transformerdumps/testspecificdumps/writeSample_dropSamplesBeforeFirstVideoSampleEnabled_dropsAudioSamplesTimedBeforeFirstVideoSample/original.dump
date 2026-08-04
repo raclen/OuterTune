@@ -1,0 +1,48 @@
+format audio:
+  sampleMimeType = audio/mp4a-latm
+  channelCount = 2
+  sampleRate = 40000
+  initializationData:
+    data = length 2, hash 5F7
+format video:
+  sampleMimeType = video/avc
+  width = 1080
+  height = 720
+  colorInfo:
+    colorSpace = 1
+    colorRange = 2
+    colorTransfer = 3
+  initializationData:
+    data = length 29, hash 4746B5D9
+    data = length 10, hash 7A0D0F2B
+sample:
+  trackType = audio
+  dataHashCode = -1534996748
+  size = 55
+  isKeyFrame = true
+  presentationTimeUs = 10
+sample:
+  trackType = audio
+  dataHashCode = -1534996748
+  size = 55
+  isKeyFrame = true
+  presentationTimeUs = 12
+sample:
+  trackType = audio
+  dataHashCode = -1534996748
+  size = 55
+  isKeyFrame = true
+  presentationTimeUs = 17
+sample:
+  trackType = video
+  dataHashCode = -1534996748
+  size = 55
+  isKeyFrame = true
+  presentationTimeUs = 10
+sample:
+  trackType = video
+  dataHashCode = -1534996748
+  size = 55
+  isKeyFrame = true
+  presentationTimeUs = 15
+released = true

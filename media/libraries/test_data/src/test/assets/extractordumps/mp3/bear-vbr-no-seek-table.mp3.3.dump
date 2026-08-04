@@ -1,0 +1,24 @@
+seekMap:
+  isSeekable = true
+  duration = 9540000
+  getPosition(0) = [[timeUs=0, position=224]]
+  getPosition(1) = [[timeUs=0, position=224], [timeUs=24000, position=320]]
+  getPosition(4770000) = [[timeUs=4752000, position=19232], [timeUs=4776000, position=19328]]
+  getPosition(9540000) = [[timeUs=9516000, position=38288]]
+numberOfTracks = 1
+track 0:
+  total output bytes = 96
+  sample count = 1
+  track duration = 9540000
+  format 0:
+    averageBitrate = 32000
+    containerMimeType = audio/mpeg
+    sampleMimeType = audio/mpeg
+    maxInputSize = 4096
+    channelCount = 2
+    sampleRate = 48000
+  sample 0:
+    time = 9516000
+    flags = 1
+    data = length 96, hash FF8D5B98
+tracksEnded = true

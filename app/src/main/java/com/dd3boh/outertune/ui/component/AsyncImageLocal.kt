@@ -1,0 +1,86 @@
+/*
+ * Copyright (C) 2025 O‌ute‌rTu‌ne Project
+ *
+ * SPDX-License-Identifier: GPL-3.0
+ *
+ * For any other attributions, refer to the git commit history
+ */
+
+package com.dd3boh.outertune.ui.component
+
+import android.graphics.Bitmap
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.surfaceColorAtElevation
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.unit.dp
+import com.dd3boh.outertune.constants.MAX_COIL_JOBS
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newFixedThreadPoolContext
+
+
+@OptIn(DelicateCoroutinesApi::class)
+val imageSession = newFixedThreadPoolContext(MAX_COIL_JOBS, "ImageExtractor")
+
+/**
+ * Non-blocking image
+ */
+@Composable
+fun AsyncImageLocal(
+    image: () -> Bitmap?,
+    modifier: Modifier = Modifier,
+    placeholderIcon: ImageVector? = Icons.Rounded.MusicNote,
+    contentScale: ContentScale = ContentScale.Fit,
+    contentDescription: String? = null,
+) {
+    var imageBitmapState by remember { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(image) {
+        CoroutineScope(imageSession).launch {
+            try {
+                imageBitmapState = image.invoke()?.asImageBitmap()
+            } catch (e: Exception) {
+//                e.printStackTrace()
+                // this probably won't be an issue when debugging...
+                // I'd like to add that this WAS a problem when debugging.
+            }
+        }
+    }
+
+    imageBitmapState.let { imageBitmap ->
+        if (imageBitmap == null) {
+            placeholderIcon?.let {
+                Icon(
+                    it,
+                    contentDescription = contentDescription,
+                    tint = MaterialTheme.colorScheme.secondary,
+                    modifier = modifier
+                        .background(MaterialTheme.colorScheme.surfaceColorAtElevation(16.dp))
+                )
+            }
+        } else {
+            Image(
+                bitmap = imageBitmap,
+                contentDescription = contentDescription,
+                contentScale = contentScale,
+                modifier = modifier
+                    .background(MaterialTheme.colorScheme.surfaceContainer),
+            )
+        }
+    }
+}

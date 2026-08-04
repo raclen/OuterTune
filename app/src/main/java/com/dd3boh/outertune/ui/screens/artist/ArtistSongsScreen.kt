@@ -1,0 +1,272 @@
+package com.dd3boh.outertune.ui.screens.artist
+
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarScrollBehavior
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.viewModelScope
+import androidx.navigation.NavController
+import com.dd3boh.outertune.LocalMenuState
+import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
+import com.dd3boh.outertune.LocalPlayerConnection
+import com.dd3boh.outertune.LocalSnackbarHostState
+import com.dd3boh.outertune.R
+import com.dd3boh.outertune.constants.ArtistSongSortDescendingKey
+import com.dd3boh.outertune.constants.ArtistSongSortType
+import com.dd3boh.outertune.constants.ArtistSongSortTypeKey
+import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
+import com.dd3boh.outertune.constants.ListThumbnailSize
+import com.dd3boh.outertune.constants.SwipeToQueueKey
+import com.dd3boh.outertune.constants.TopBarInsets
+import com.dd3boh.outertune.models.toMediaMetadata
+import com.dd3boh.outertune.playback.queues.ListQueue
+import com.dd3boh.outertune.ui.component.FloatingFooter
+import com.dd3boh.outertune.ui.component.LazyColumnScrollbar
+import com.dd3boh.outertune.ui.component.SelectHeader
+import com.dd3boh.outertune.ui.component.SortHeader
+import com.dd3boh.outertune.ui.component.button.IconButton
+import com.dd3boh.outertune.ui.component.items.SongListItem
+import com.dd3boh.outertune.ui.menu.ActionDropdown
+import com.dd3boh.outertune.ui.menu.DropdownItem
+import com.dd3boh.outertune.ui.utils.backToMain
+import com.dd3boh.outertune.utils.rememberEnumPreference
+import com.dd3boh.outertune.utils.rememberPreference
+import com.dd3boh.outertune.viewmodels.ArtistSongsViewModel
+import com.zionhuang.innertube.YouTube
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.math.roundToInt
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ArtistSongsScreen(
+    navController: NavController,
+    scrollBehavior: TopAppBarScrollBehavior,
+    viewModel: ArtistSongsViewModel = hiltViewModel(),
+) {
+    val density = LocalDensity.current
+    val menuState = LocalMenuState.current
+    val playerConnection = LocalPlayerConnection.current ?: return
+
+    val (sortType, onSortTypeChange) = rememberEnumPreference(ArtistSongSortTypeKey, ArtistSongSortType.CREATE_DATE)
+    val (sortDescending, onSortDescendingChange) = rememberPreference(ArtistSongSortDescendingKey, true)
+    val swipeEnabled by rememberPreference(SwipeToQueueKey, true)
+
+    val artist by viewModel.artist.collectAsState()
+    val isPlaying by playerConnection.isPlaying.collectAsState()
+    val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val songs by viewModel.songs.collectAsState()
+
+    val lazyListState = rememberLazyListState()
+
+    var inSelectMode by rememberSaveable { mutableStateOf(false) }
+    val selection = rememberSaveable(
+        saver = listSaver<MutableList<String>, String>(
+            save = { it.toList() },
+            restore = { it.toMutableStateList() }
+        )
+    ) { mutableStateListOf() }
+    val onExitSelectionMode = {
+        inSelectMode = false
+        selection.clear()
+    }
+    if (inSelectMode) {
+        BackHandler(onBack = onExitSelectionMode)
+    }
+
+    val snackbarHostState = LocalSnackbarHostState.current
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 32.dp)
+    ) {
+        LazyColumn(
+            state = lazyListState,
+            contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
+            modifier = Modifier.padding(bottom = if (inSelectMode) 64.dp else 0.dp)
+        ) {
+            item(
+                key = "header",
+                contentType = CONTENT_TYPE_HEADER
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 16.dp, end = 8.dp)
+                ) {
+                    SortHeader(
+                        sortType = sortType,
+                        sortDescending = sortDescending,
+                        onSortTypeChange = onSortTypeChange,
+                        onSortDescendingChange = onSortDescendingChange,
+                        sortTypeText = { sortType ->
+                            when (sortType) {
+                                ArtistSongSortType.CREATE_DATE -> R.string.sort_by_create_date
+                                ArtistSongSortType.NAME -> R.string.sort_by_name
+                            }
+                        }
+                    )
+
+                    Spacer(Modifier.weight(1f))
+
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                            style = MaterialTheme.typography.titleSmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        ActionDropdown(
+                            actions = listOf(
+                                DropdownItem(
+                                    title = stringResource(R.string.shuffle),
+                                    leadingIcon = { Icon(Icons.Rounded.Shuffle, null) },
+                                    action = {
+                                        playerConnection.playQueue(
+                                            ListQueue(
+                                                title = artist?.artist?.name,
+                                                items = songs.map { it.toMediaMetadata() },
+                                                startShuffled = true,
+                                                playlistId = null,
+                                            )
+                                        )
+                                    }
+                                ),
+                            )
+                        )
+                    }
+                }
+            }
+
+            val thumbnailSize = (ListThumbnailSize.value * density.density).roundToInt()
+            itemsIndexed(
+                items = songs,
+                key = { _, item -> item.id }
+            ) { index, song ->
+                SongListItem(
+                    song = song,
+                    navController = navController,
+                    snackbarHostState = snackbarHostState,
+
+                    isActive = song.song.id == mediaMetadata?.id,
+                    isPlaying = isPlaying,
+                    inSelectMode = inSelectMode,
+                    isSelected = selection.contains(song.id),
+                    onSelectedChange = {
+                        inSelectMode = true
+                        if (it) {
+                            selection.add(song.id)
+                        } else {
+                            selection.remove(song.id)
+                        }
+                    },
+                    swipeEnabled = swipeEnabled,
+
+                    thumbnailSize = thumbnailSize,
+                    onPlay = {
+                        viewModel.viewModelScope.launch(Dispatchers.IO) {
+                            val playlistId = YouTube.artist(artist?.id!!).getOrNull()
+                                ?.artist?.shuffleEndpoint?.playlistId
+
+                            withContext(Dispatchers.Main) {
+                                playerConnection.playQueue(
+                                    ListQueue(
+                                        title = artist?.artist?.name,
+                                        items = songs.map { it.toMediaMetadata() },
+                                        startIndex = index,
+                                        playlistId = playlistId
+                                    )
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem()
+                )
+            }
+        }
+        LazyColumnScrollbar(
+            state = lazyListState,
+        )
+
+        TopAppBar(
+            title = { Text(artist?.artist?.name.orEmpty()) },
+            navigationIcon = {
+                IconButton(
+                    onClick = navController::navigateUp,
+                    onLongClick = navController::backToMain
+                ) {
+                    Icon(
+                        Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = null
+                    )
+                }
+            },
+            windowInsets = TopBarInsets,
+            scrollBehavior = scrollBehavior
+        )
+
+
+        FloatingFooter(inSelectMode) {
+            SelectHeader(
+                navController = navController,
+                selectedItems = selection.mapNotNull { songId ->
+                    songs.find { it.id == songId }
+                }.map { it.toMediaMetadata() },
+                totalItemCount = songs.size,
+                onSelectAll = {
+                    selection.clear()
+                    selection.addAll(songs.map { it.id })
+                },
+                onDeselectAll = { selection.clear() },
+                menuState = menuState,
+                onDismiss = onExitSelectionMode
+            )
+        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                .align(Alignment.BottomCenter)
+        )
+    }
+}

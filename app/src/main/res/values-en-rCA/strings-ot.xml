@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="grp_behavior">Behaviour</string>
+    <string name="oobe_ytm_integration_description">Access your favourite tracks seamlessly</string>
+</resources>
