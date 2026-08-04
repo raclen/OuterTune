@@ -1,115 +1,113 @@
-# OuterTune
+# OuterTune 洛雪版
 
-<img src="./assets/outertune.webp" height="88" alt="OuterTune app icon">
+<img src="./assets/outertune.webp" height="88" alt="OuterTune 应用图标">
 
-A Material 3 YouTube Music client & local music player for Android
+OuterTune 洛雪版是一个 Android 本地音乐播放器和在线音乐播放器二次开发项目。项目保留原有 Material 3 界面、播放队列和 Media3 播放内核，在线搜索与播放链路接入酷我搜索和洛雪自定义音源。
 
-[![Latest release](https://img.shields.io/github/v/release/OuterTune/OuterTune?include_prereleases)](https://github.com/OuterTune/OuterTune/releases)
-[![License](https://img.shields.io/github/license/OuterTune/OuterTune)](https://www.gnu.org/licenses/gpl-3.0)
-[![Downloads](https://img.shields.io/github/downloads/OuterTune/OuterTune/total)](https://github.com/OuterTune/OuterTune/releases)
+## 当前功能
 
+- 本地音乐播放
+  - MP3、FLAC、OGG 等常见格式
+  - 本地文件夹、媒体库、播放历史
+  - 多播放队列、队列持久化和恢复
+- 洛雪在线音乐
+  - 使用酷我接口搜索歌曲、歌手、专辑和时长
+  - 使用洛雪 JS 音源解析实际播放地址
+  - 内置 `长青SVIP音源 v1.2.0` 作为开箱测试音源
+  - 支持导入其他洛雪 JS 音源
+  - 支持 `128k`、`320k`、`flac`、`flac24bit` 音质选择
+  - 自动修正酷我封面 CDN 地址，兼容 Android HTTPS 网络环境
+- 播放体验
+  - Material 3 界面和深色模式
+  - 后台播放和媒体通知
+  - 歌词显示、LRC/TTML 等歌词格式
+  - 音频均衡、速度和音调调整
+  - Android Auto 支持
 
-<!-- use  "⠀⠀" for spacing -->
-[<img src="assets/badge_github.png" alt="Get it on GitHub" height="40">](https://github.com/OuterTune/OuterTune/releases/latest)⠀⠀
-[<img src="assets/IzzyOnDroidButtonGreyBorder.svg" alt="Get it on IzzyOnDroid" height="40">](https://apt.izzysoft.de/fdroid/index/apk/com.dd3boh.outertune)⠀⠀
-[<img src="assets/badge_fdroid.svg" alt="Get it on F-Droid" height="40">](https://f-droid.org/en/packages/com.dd3boh.outertune/)⠀⠀
-[<img src="assets/badge_obtainium.png" alt="Get it on Obtainium" height="40">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://app/%7B%22id%22%3A%22com.dd3boh.outertune%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2FDD3Boh%2FOuterTune%22%2C%22author%22%3A%22DD3Boh%22%2C%22name%22%3A%22OuterTune%22%2C%22preferredApkIndex%22%3A0%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22filterReleaseTitlesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22filterReleaseNotesByRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22verifyLatestTag%5C%22%3Afalse%2C%5C%22dontSortReleasesList%5C%22%3Afalse%2C%5C%22useLatestAssetDateAsReleaseDate%5C%22%3Afalse%2C%5C%22trackOnly%5C%22%3Afalse%2C%5C%22versionExtractionRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22matchGroupToUse%5C%22%3A%5C%22%5C%22%2C%5C%22versionDetection%5C%22%3Atrue%2C%5C%22releaseDateAsVersion%5C%22%3Afalse%2C%5C%22useVersionCodeAsOSVersion%5C%22%3Afalse%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22%5C%22%2C%5C%22invertAPKFilter%5C%22%3Afalse%2C%5C%22autoApkFilterByArch%5C%22%3Atrue%2C%5C%22appName%5C%22%3A%5C%22%5C%22%2C%5C%22shizukuPretendToBeGooglePlay%5C%22%3Afalse%2C%5C%22allowInsecure%5C%22%3Afalse%2C%5C%22exemptFromBackgroundUpdates%5C%22%3Afalse%2C%5C%22skipUpdateNotifications%5C%22%3Afalse%2C%5C%22about%5C%22%3A%5C%22A%20Material%203%20YouTube%20Music%20client%20%26%20local%20music%20player%20for%20Android%5C%22%7D%22%2C%22overrideSource%22%3A%22GitHub%22%7D)
+## 导入洛雪音源
 
+1. 打开应用搜索页。
+2. 点击顶部右侧的音源文件图标，或进入 **设置 → 洛雪音源**。
+3. 点击 **导入洛雪自定义音源**。
+4. 选择一个 `.js` 音源文件。
+5. 在同一页面选择默认音质。
 
-> [!WARNING]
-> OuterTune is only available on the platforms listed here. This app is not listed on the Play Store or any other fake website that claim to be us. We recommend you to immediately delete any fake versions or clones for your safety.
+应用已经内置推荐音源，不导入也可以直接搜索歌曲并播放。用户导入的脚本只保存在本机应用数据中。
 
-> [!NOTE]
-> We are looking for maintainers! For more information and the state of OuterTune: https://github.com/OuterTune/OuterTune/discussions/1116
+## 搜索与播放
 
-## Features
+1. 在搜索页输入歌曲名称，例如 `一路生花`。
+2. 在线搜索结果来自酷我。
+3. 点击歌曲后，应用将歌曲元数据转换为统一的 `MediaMetadata`。
+4. 播放服务根据歌曲的 `source` 信息调用洛雪 JS 音源解析播放地址。
 
-OuterTune is a supercharged fork of [InnerTune](https://github.com/z-huang/InnerTune). This app is both a local media player, and a YouTube Music client.
+在线源参数会随歌曲保存到本地数据库，队列重启恢复后仍然可以使用洛雪解析链路。
 
-- YouTube Music client features
-    - Song downloading (offline playback)
-    - Seamless playback: no ADs & background playback
-    - Account synchronization
-        - Full playlist sync from the app to the remote account is temporally unavailable 
-- Local audio file playback (ex. MP3, OGG, FLAC, etc.)
-    - Play local and Youtube Music songs at the same time
-    - Uses a custom tag extractor instead of MediaStore's broken metadata extractor! (e.g tags delimited with \\ now show up properly)
-- Sleek Material3 design
-- Multiple queues
-- Synchronized lyrics, and support for word by word/Karaoke lyrics formats (e.g LRC, TTML)
-- Audio normalization, tempo/pitch adjustment, and various other audio effects
-- Android Auto support
-- Support for Android 8 (Oreo) and higher
+## 架构说明
 
-> [!NOTE]
-> Android 8 (Oreo) and higher is supported. While the app may work on Android 7.x (Nougat), we do not officially support this version
+```text
+搜索页
+  -> KuwoSearchClient
+  -> MediaMetadata(source/sourceId/sourceData)
+  -> MusicService
+  -> LxSourceRuntime (QuickJS)
+  -> 洛雪 JS 音源
+  -> Media3 播放器
+```
 
-> [!NOTE]
-> Read our FAQ and guides on our [wiki](https://github.com/OuterTune/OuterTune/wiki/Frequently-Asked-Questions-(FAQ))
+- `source/lx/KuwoSearchClient.kt`：酷我搜索与封面元数据适配。
+- `source/lx/LxSourceRuntime.kt`：QuickJS 运行时、洛雪 API 和 HTTP Bridge。
+- `app/src/main/assets/script/default-lx-source.js`：内置测试音源。
+- `app/src/main/assets/script/user-api-preload.js`：洛雪移动版 API 兼容层。
+- `MediaMetadata.sourceData`：保存音源所需的歌曲参数，不让平台字段渗透到 UI 和队列代码。
 
+## 构建
 
-## Screenshots
+### 环境
 
-<img src="./assets/main-interface.jpg" alt="Main player interface" />
-<br/><br/>
-<img src="./assets/player.jpg" alt="Player interface"/>
-<br/><br/>
-<img src="./assets/ytm-sync.jpg" alt="Sync with YouTube Music"/>
+- Windows 11 或 Linux
+- JDK 21
+- Android SDK 36
+- Android NDK/CMake（本地 TagLib 模块需要）
 
-[Full image gallery](./assets/gallery)
+### PowerShell
 
-> [!WARNING]
->
->If you're in a region where YouTube Music is not supported, you won't be able to use this app
-***unless*** you have a proxy or VPN to connect to a YTM supported region.
+```powershell
+$env:JAVA_HOME = "PATH_TO_JDK_21"
+$env:ANDROID_SDK_ROOT = "PATH_TO_ANDROID_SDK"
+./gradlew.bat :app:assembleCoreDebug --no-configuration-cache
+```
 
-## Building & Contributing
+生成的 APK 位于：
 
-We are looking for contributors, translators, and maintainers! If you would like to help out, or just wish to build the
-app yourself, please see the [building and contribution notes](./CONTRIBUTING.md).
+```text
+app/build/outputs/apk/core/debug/
+```
 
-### Submitting Translations
+Debug 包名为 `com.dd3boh.outertune.debug`，应用名称为 **OuterTune 洛雪版**，可与其他安装包并存。
 
-We use Weblate to translate OuterTune. For more details or to submit translations, visit our [Weblate page](https://hosted.weblate.org/projects/outertune/).
+## 项目状态
 
-<a href="https://hosted.weblate.org/projects/outertune/">
-<img src="https://hosted.weblate.org/widget/outertune/multi-auto.svg" alt="Translation status" />
-</a>
+当前版本已经完成“酷我搜索 → 洛雪音源解析 → Media3 播放”的首个完整闭环。原项目中的部分 YouTube 页面和兼容代码仍在逐步清理，后续会继续收敛为本地音乐与洛雪在线音源两类功能。
 
-Thank you very much for helping to make OuterTune accessible to many people worldwide.
+## 目录结构
 
-## Support us
+```text
+app/src/main/java/com/dd3boh/outertune/
+  source/lx/          洛雪搜索与脚本运行时
+  playback/           播放服务、队列和 Media3 接入
+  ui/screens/         Compose 页面
+  db/                 Room 数据库和队列持久化
+app/src/main/assets/script/
+  default-lx-source.js
+  user-api-preload.js
+media/                本地 Media3 定制模块
+```
 
-If you like OuterTune, you're welcome to send a donation. Donations will support the development,
-including bug fixes and new features.
+## 许可证与致谢
 
-<a href="https://paypal.me/DD3Boh"><img src="./assets/paypal.png" alt="PayPal" height="60" ></a>
+本项目沿用原 OuterTune/InnerTune 代码的 GPL-3.0 许可证。具体版权和第三方依赖请查看应用内开源许可页面及各模块源码头部声明。
 
-## Help & Support
-Contact us through GitHub
-- For bug reports and/or feature requests, please create a [GitHub issue](https://github.com/OuterTune/OuterTune/issues).
-- If you have want help with the app, check out the [Discussion Forum](https://github.com/OuterTune/OuterTune/discussions).
-
-For all other inquiries NOT related to the app, you can contact us at outertune@protonmail.com. **This is NOT a support email!**
-
-## Attribution
-
-Thanks to all our contributors! Check them out [here](https://github.com/OuterTune/OuterTune/graphs/contributors)
-
-[z-huang/InnerTune](https://github.com/z-huang/InnerTune) for providing an awesome base for this fork, none of this
-would have been possible without it.
-
-[Musicolet](https://play.google.com/store/apps/details?id=in.krosbits.musicolet) for inspiration of a local music player
-experience done right.
-
-[Gramophone](https://github.com/FoedusProgramme/Gramophone) for emotional support, and a legendary lyrics parser
-
-[![Star History Chart](https://api.star-history.com/svg?repos=outertune/outertune&type=Date)](https://www.star-history.com/#outertune/outertune&Date)
-
-## Disclaimer
-
-This project and its contents are not affiliated with, funded, authorized, endorsed by, or in any
-way associated with YouTube, Google LLC or any of its affiliates and subsidiaries.
-
-Any trademark, service mark, trade name, or other intellectual property rights used in this project
-are owned by the respective owners.
+- [OuterTune](https://github.com/OuterTune/OuterTune)
+- [InnerTune](https://github.com/z-huang/InnerTune)
+- [洛雪音乐 API 规范](https://github.com/lyswhut/lx-music-desktop)

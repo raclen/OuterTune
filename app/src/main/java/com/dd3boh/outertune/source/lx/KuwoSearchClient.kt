@@ -81,8 +81,16 @@ object KuwoSearchClient {
             parameter("size", "500")
             parameter("rid", songId)
         }
-        response.body<String>().trim().takeIf { it.startsWith("http") }?.replace("http://", "https://")
+        response.body<String>().trim().takeIf { it.startsWith("http") }?.let(::normalizeCoverUrl)
     }.getOrNull()
+
+    /**
+     * 部分酷我封面地址使用 kwcdn 域名，但 Android/部分网络环境无法建立 HTTPS 连接。
+     * 同一资源在 kuwo.cn 域名下可用，统一转换为 HTTPS 后再交给 Coil。
+     */
+    private fun normalizeCoverUrl(url: String): String = url
+        .replaceFirst("http://", "https://")
+        .replace(".kwcdn.kuwo.cn", ".kuwo.cn")
 
     private fun parseQualities(value: String): List<LxQuality> {
         val qualityOrder = listOf("128k", "320k", "flac", "flac24bit")
