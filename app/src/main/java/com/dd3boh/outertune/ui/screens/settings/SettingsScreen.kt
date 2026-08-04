@@ -83,6 +83,7 @@ fun SettingsScreen(
         ) {
             PreferenceEntry(
                 title = { Text("洛雪音源") },
+                description = "导入 JS 音源与选择播放音质",
                 icon = { Icon(Icons.Rounded.MusicNote, null) },
                 onClick = { navController.navigate("settings/lx_source") }
             )
