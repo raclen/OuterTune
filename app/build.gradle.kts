@@ -30,8 +30,8 @@ android {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
         targetSdk = 36
-        versionCode = 102
-        versionName = "1.0.2"
+        versionCode = 103
+        versionName = "1.0.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -39,8 +39,12 @@ android {
         localeFilters += "zh-rCN"
     }
 
+    val hasReleaseSigning = (keystoreProperties["storeFile"] as? String)
+        ?.takeIf { it.isNotBlank() }
+        ?.let { rootProject.file(it).isFile } == true
+
     signingConfigs {
-        if (!keystoreProperties.isEmpty) {
+        if (hasReleaseSigning) {
             create("ot_release") {
                 storeFile = file(keystoreProperties["storeFile"] as String)
                 (keystoreProperties["keyAlias"] as? String)?.let {
@@ -53,8 +57,6 @@ android {
                     storePassword = it
                 }
             }
-        } else {
-            create("ot_release") { }
         }
     }
 
@@ -64,7 +66,11 @@ android {
             isShrinkResources = true
             isCrunchPngs = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("ot_release")
+            signingConfig = if (hasReleaseSigning) {
+                signingConfigs.getByName("ot_release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
         }
         debug {
             applicationIdSuffix = ".debug"

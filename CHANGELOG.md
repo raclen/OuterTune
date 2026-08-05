@@ -1,3 +1,11 @@
+# OuterTune v1.0.3
+
+## 修复
+
+- 修复未配置 GitHub Actions 签名 Secrets 时 Release 构建失败的问题，自动回退到 Debug 签名。
+- 修复 Android 媒体搜索入口缺少 `MEDIA_PLAY_FROM_SEARCH` 声明导致的 Lint 构建失败。
+- Release 草稿发布在未配置 `REL_TOKEN` 时自动使用 GitHub Actions 默认令牌。
+
 # OuterTune v1.0.2
 
 ## 修复

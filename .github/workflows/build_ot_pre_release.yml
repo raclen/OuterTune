@@ -2,6 +2,9 @@ name: Build APKs for pre release
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,6 +28,7 @@ jobs:
         run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Setup signing configs
+        if: ${{ secrets.KEYSTORE != '' && secrets.KEYSTORE_PROPERTIES != '' }}
         run: |
           echo "$KEYSTORE" | base64 --decode > test.jks
           echo "$KEYSTORE_PROPERTIES" > keystore.properties
@@ -57,4 +61,4 @@ jobs:
             app/build/outputs/apk/core/userdebug/*.apk
             app/build/outputs/apk/full/userdebug/*.apk
         env:
-          GITHUB_TOKEN: ${{ secrets.REL_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.REL_TOKEN || github.token }}
