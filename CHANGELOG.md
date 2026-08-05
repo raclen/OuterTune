@@ -1,3 +1,9 @@
+# OuterTune v1.0.1
+
+## 修复
+
+- 修复 GitHub Actions 中 Gradle Wrapper 缺少执行权限导致 Release 构建失败的问题。
+
 # OuterTune v1.0.0
 
 首个洛雪音源版公开版本。
