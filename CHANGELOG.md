@@ -1,3 +1,9 @@
+# OuterTune v1.0.4
+
+## 修复
+
+- 修复 GitHub Actions 不允许在步骤条件中直接读取签名 Secrets 导致工作流校验失败的问题。
+
 # OuterTune v1.0.3
 
 ## 修复

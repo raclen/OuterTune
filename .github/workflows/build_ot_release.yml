@@ -11,6 +11,8 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      HAS_RELEASE_SIGNING: ${{ secrets.KEYSTORE != '' && secrets.KEYSTORE_PROPERTIES != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -31,7 +33,7 @@ jobs:
         run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Setup signing configs
-        if: ${{ secrets.KEYSTORE != '' && secrets.KEYSTORE_PROPERTIES != '' }}
+        if: env.HAS_RELEASE_SIGNING == 'true'
         run: |
           echo "$KEYSTORE" | base64 --decode > test.jks
           echo "$KEYSTORE_PROPERTIES" > keystore.properties
