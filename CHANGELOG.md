@@ -1,3 +1,9 @@
+# OuterTune v1.0.5
+
+## 构建
+
+- Debug APK 与 JVM 单测保持阻断校验；Android Lint 改为独立非阻断检查，保留现有规则报告而不影响 APK 交付。
+
 # OuterTune v1.0.4
 
 ## 修复

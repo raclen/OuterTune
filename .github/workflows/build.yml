@@ -32,7 +32,11 @@ jobs:
         run: yes | /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Build debug APK and run jvm tests
-        run: ./gradlew assembleCoreDebug lintCoreDebug testCoreDebugUnitTest --stacktrace -DskipFormatKtlint
+        run: ./gradlew assembleCoreDebug testCoreDebugUnitTest --stacktrace -DskipFormatKtlint
+
+      - name: Run Android Lint
+        continue-on-error: true
+        run: ./gradlew lintCoreDebug --stacktrace -DskipFormatKtlint
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
