@@ -1,3 +1,9 @@
+# OuterTune v1.0.2
+
+## 修复
+
+- 恢复 `ffMetadataEx` Git 子模块，确保 GitHub Actions checkout 后可配置 Gradle 项目。
+
 # OuterTune v1.0.1
 
 ## 修复
