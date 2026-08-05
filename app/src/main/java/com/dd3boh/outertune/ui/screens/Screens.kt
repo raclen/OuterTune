@@ -19,6 +19,7 @@ import androidx.compose.material.icons.rounded.LibraryMusic
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PlayCircle
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.dd3boh.outertune.R
@@ -36,6 +37,7 @@ sealed class Screens(
     data object Albums : Screens(R.string.albums, Icons.Rounded.Album, "albums")
     data object Playlists : Screens(R.string.playlists, Icons.AutoMirrored.Rounded.QueueMusic, "playlists")
     data object Library : Screens(R.string.library, Icons.Rounded.LibraryMusic, "library")
+    data object Settings : Screens(R.string.settings, Icons.Rounded.Settings, "settings")
     data object Player : Screens(R.string.player, Icons.Rounded.PlayCircle, "player")
 
     enum class LibraryFilter {
@@ -54,7 +56,7 @@ sealed class Screens(
          * A: Artists
          * B: Albums
          * L: Playlists
-         * M: Library
+         * M: Settings
          * P: Player
          *
          * Not/won't implement
@@ -68,7 +70,7 @@ sealed class Screens(
             Artists to 'A',
             Albums to 'B',
             Playlists to 'L',
-            Library to 'M',
+            Settings to 'M',
 //            Player to 'P',
         )
 

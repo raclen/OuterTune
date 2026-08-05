@@ -30,9 +30,13 @@ android {
         applicationId = "com.dd3boh.outertune"
         minSdk = 24
         targetSdk = 36
-        versionCode = 73
-        versionName = "0.10.2-b3"
+        versionCode = 100
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    androidResources {
+        localeFilters += "zh-rCN"
     }
 
     signingConfigs {
@@ -255,7 +259,6 @@ dependencies {
     implementation(libs.ktor.serialization.json)
 
     // modules
-    implementation(project(":innertube"))
     implementation(project(":kugou"))
     implementation(project(":lrclib"))
     implementation(project(":material-color-utilities"))

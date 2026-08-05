@@ -19,10 +19,6 @@ import dagger.hilt.components.SingletonComponent
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
-@Qualifier
-@Retention(AnnotationRetention.BINARY)
-annotation class DownloadCache
-
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -58,14 +54,4 @@ object AppModule {
         return constructor()
     }
 
-    @Singleton
-    @Provides
-    @DownloadCache
-    fun provideDownloadCache(@ApplicationContext context: Context, databaseProvider: DatabaseProvider): SimpleCache {
-        val constructor = {
-            SimpleCache(context.filesDir.resolve("download"), NoOpCacheEvictor(), databaseProvider)
-        }
-        constructor().release()
-        return constructor()
-    }
 }

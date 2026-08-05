@@ -77,7 +77,7 @@ fun FolderMenu(
                     allFolderSongs.forEach { s ->
                         val se = s.song
                         result += "#EXTINF:${se.duration},${s.artists.joinToString(";") { it.name }} - ${s.title}\n"
-                        result += if (se.isLocal) "${se.id}, ${se.localPath}" else "https://youtube.com/watch?v=${se.id}"
+                        result += if (se.isLocal) "${se.id}, ${se.localPath}" else se.id
                         result += "\n"
                     }
                     context.contentResolver.openOutputStream(uri)?.use { outputStream ->

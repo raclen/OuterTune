@@ -38,16 +38,14 @@ see https://github.com/OuterTune/ffMetadataEx/blob/main/README.md#building
 
 ## Translations
 
-We use Weblate to translate OuterTune. For more details or to get started,
-visit [our Weblate page](https://hosted.weblate.org/projects/outertune/).
-Thank you for the libre tier!
+当前二次开发版本只维护简体中文界面。新增或修改用户可见文案时，请同时检查
+`app/src/main/res/values` 与 `app/src/main/res/values-zh-rCN`。
 
 ### Important
 
-- Translators should submit strings through Weblate, however if there are changes that cannot be accomplished via
-  Weblate, you may submit a pull request manually
-- Make sure new strings are in the right place, which is `strings-ot.xml` for OuterTune strings
-- If they are ported from upstream InnerTune (ex. when syncing upstream), they go into `strings.xml`
+- 新功能文案放入 `strings-ot.xml`
+- 保持默认资源与 `zh-rCN` 资源键一致
+- 不新增其他语言资源目录
 
 ## Submitting a pull request
 
@@ -109,9 +107,8 @@ To make everyone's life easier, there are a set of guidelines that are to be fol
 
 | Tag (Features) | Description                 |
 |----------------|-----------------------------|
-| sync           | YouTube Music sync features |
 | downloads      | Offline song downloads      |
-| innertube      | Innertube module            |
+| source         | 洛雪音源、在线搜索和解析链路 |
 
 | Tag (Local Media) | Description                      |
 |-------------------|----------------------------------|

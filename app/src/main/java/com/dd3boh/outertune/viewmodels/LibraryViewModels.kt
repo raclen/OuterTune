@@ -53,11 +53,9 @@ import com.dd3boh.outertune.models.DirectoryTree
 import com.dd3boh.outertune.ui.utils.STORAGE_ROOT
 import com.dd3boh.outertune.ui.utils.cacheDirectoryTree
 import com.dd3boh.outertune.ui.utils.getDirectoryTree
-import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.refreshLocal
-import com.zionhuang.innertube.YouTube
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -80,21 +78,10 @@ import javax.inject.Inject
 class LibrarySongsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     private val database: MusicDatabase,
-    private val syncUtils: SyncUtils,
 ) : ViewModel() {
-    val allSongs = getSyncedSongs(context, database)
-    val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs
-    val isSyncingRemoteSongs = syncUtils.isSyncingRemoteSongs
+    val allSongs = getLibrarySongs(context, database)
 
-    fun syncLibrarySongs(bypassCd: Boolean = false) {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteSongs(bypassCd) }
-    }
-
-    fun syncLikedSongs(bypassCd: Boolean = false) {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteLikedSongs(bypassCd) }
-    }
-
-    private fun getSyncedSongs(context: Context, database: MusicDatabase): StateFlow<List<Song>?> {
+    private fun getLibrarySongs(context: Context, database: MusicDatabase): StateFlow<List<Song>?> {
 
         return context.dataStore.data
             .map {
@@ -168,10 +155,7 @@ class LibraryFoldersViewModel @Inject constructor(
 class LibraryArtistsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    private val syncUtils: SyncUtils,
 ) : ViewModel() {
-    val isSyncingRemoteArtists = syncUtils.isSyncingRemoteArtists
-
     val allArtists = context.dataStore.data
         .map {
             Triple(
@@ -186,41 +170,13 @@ class LibraryArtistsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-    fun syncArtists(bypassCd: Boolean = false) {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteArtists(bypassCd) }
-    }
-
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            allArtists.collect { artists ->
-                artists
-                    ?.map { it.artist }
-                    ?.filter {
-                        it.thumbnailUrl == null || Duration.between(
-                            it.lastUpdateTime,
-                            LocalDateTime.now()
-                        ) > Duration.ofDays(10)
-                    }
-                    ?.forEach { artist ->
-                        YouTube.artist(artist.id).onSuccess { artistPage ->
-                            database.query {
-                                update(artist, artistPage)
-                            }
-                        }
-                    }
-            }
-        }
-    }
 }
 
 @HiltViewModel
 class LibraryAlbumsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    private val syncUtils: SyncUtils,
 ) : ViewModel() {
-    val isSyncingRemoteAlbums = syncUtils.isSyncingRemoteAlbums
-
     val allAlbums = context.dataStore.data
         .map {
             Triple(
@@ -235,43 +191,13 @@ class LibraryAlbumsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-    fun syncAlbums(bypassCd: Boolean = false) {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemoteAlbums(bypassCd) }
-    }
-
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            allAlbums.collect { albums ->
-                albums
-                    ?.filter {
-                        !it.album.isLocal && it.album.songCount == 0
-                    }?.forEach { album ->
-                        YouTube.album(album.id).onSuccess { albumPage ->
-                            database.query {
-                                update(album.album, albumPage)
-                            }
-                        }.onFailure {
-                            reportException(it)
-                            if (it.message?.contains("NOT_FOUND") == true) {
-                                database.query {
-                                    delete(album.album)
-                                }
-                            }
-                        }
-                    }
-            }
-        }
-    }
 }
 
 @HiltViewModel
 class LibraryPlaylistsViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    private val syncUtils: SyncUtils,
 ) : ViewModel() {
-    val isSyncingRemotePlaylists = syncUtils.isSyncingRemotePlaylists
-
     val allPlaylists = context.dataStore.data
         .map {
             Triple(
@@ -286,9 +212,6 @@ class LibraryPlaylistsViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
 
-    fun syncPlaylists(bypassCd: Boolean = false) {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.syncRemotePlaylists(bypassCd) }
-    }
 }
 
 @HiltViewModel
@@ -296,15 +219,7 @@ class LibraryPlaylistsViewModel @Inject constructor(
 class LibraryViewModel @Inject constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
-    private val syncUtils: SyncUtils
 ) : ViewModel() {
-
-    val isSyncingRemoteLikedSongs = syncUtils.isSyncingRemoteLikedSongs
-    val isSyncingRemoteSongs = syncUtils.isSyncingRemoteSongs
-    val isSyncingRemoteAlbums = syncUtils.isSyncingRemoteAlbums
-    val isSyncingRemoteArtists = syncUtils.isSyncingRemoteArtists
-    val isSyncingRemotePlaylists = syncUtils.isSyncingRemotePlaylists
-
     var artists = database.artistsBookmarkedAsc().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     var albums = database.albumsLikedAsc().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
     var playlists = database.playlistInLibraryAsc().stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
@@ -338,9 +253,6 @@ class LibraryViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    fun syncAll(bypassCd: Boolean = false) {
-        viewModelScope.launch(Dispatchers.IO) { syncUtils.tryAutoSync(bypassCd) }
-    }
 }
 
 @HiltViewModel

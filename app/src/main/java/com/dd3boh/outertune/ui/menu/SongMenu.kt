@@ -43,27 +43,21 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastSumBy
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalPlayerConnection
-import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListThumbnailSize
-import com.dd3boh.outertune.constants.SyncMode
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
-import com.dd3boh.outertune.constants.YtmSyncModeKey
 import com.dd3boh.outertune.db.entities.Event
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
-import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.items.ListItem
 import com.dd3boh.outertune.ui.dialog.AddToPlaylistDialog
@@ -75,7 +69,6 @@ import com.dd3boh.outertune.utils.joinByBullet
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.syncCoroutine
-import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -94,11 +87,8 @@ fun SongMenu(
     val density = LocalDensity.current
     val downloadUtil = LocalDownloadUtil.current
     val clipboardManager = LocalClipboard.current
-    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val queueBoard by playerConnection.queueBoard.collectAsState()
-
-    val syncMode by rememberEnumPreference(key = YtmSyncModeKey, defaultValue = SyncMode.RW)
 
     val song = originalSong
     val download by LocalDownloadUtil.current.getDownload(originalSong.id).collectAsState(initial = null)
@@ -148,9 +138,6 @@ fun SongMenu(
                         update(s)
                     }
 
-                    if (!s.isLocal) {
-                        syncUtils.likeSong(s)
-                    }
                 }
             ) {
                 Icon(
@@ -172,15 +159,6 @@ fun SongMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         )
     ) {
-        if (!song.song.isLocal)
-            GridMenuItem(
-                icon = Icons.Rounded.Radio,
-                title = R.string.start_radio
-            ) {
-                onDismiss()
-                playerConnection.playQueue(YouTubeQueue.radio(song.toMediaMetadata()), isRadio = true)
-            }
-
         GridMenuItem(
             icon = Icons.Rounded.PlayArrow,
             title = R.string.play
@@ -219,9 +197,7 @@ fun SongMenu(
             showChoosePlaylistDialog = true
         }
 
-        if (playlistSong != null && (playlist?.playlist?.isLocal == true
-                    || (playlistSong.song.song.isLocal || syncMode == SyncMode.RW))
-        ) {
+        if (playlistSong != null) {
             GridMenuItem(
                 icon = Icons.Rounded.PlaylistRemove,
                 title = R.string.remove_from_playlist
@@ -229,16 +205,6 @@ fun SongMenu(
                 database.transaction {
                     move(playlistSong.map.playlistId, playlistSong.map.position, Int.MAX_VALUE)
                     delete(playlistSong.map.copy(position = Int.MAX_VALUE))
-                }
-
-                coroutineScope.launch {
-                    playlist?.playlist?.browseId?.let { playlistId ->
-                        if (playlistSong.map.setVideoId != null) {
-                            YouTube.removeFromPlaylist(
-                                playlistId, playlistSong.map.songId, playlistSong.map.setVideoId
-                            )
-                        }
-                    }
                 }
 
                 onDismiss()
@@ -255,12 +221,7 @@ fun SongMenu(
                     if (song.song.localPath != null) {
                         downloadUtil.delete(song)
                     } else {
-                        DownloadService.sendRemoveDownload(
-                            context,
-                            ExoDownloadService::class.java,
-                            song.id,
-                            false
-                        )
+                        downloadUtil.delete(song.id)
                     }
                 }
             )
@@ -286,19 +247,6 @@ fun SongMenu(
                 navController.navigate("album/${song.song.albumId}")
             }
         }
-        if (!song.song.isLocal)
-            GridMenuItem(
-                icon = Icons.Rounded.Share,
-                title = R.string.share
-            ) {
-                onDismiss()
-                val intent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}")
-                }
-                context.startActivity(Intent.createChooser(intent, null))
-            }
         GridMenuItem(
             icon = Icons.Rounded.Info,
             title = R.string.details
@@ -381,12 +329,7 @@ fun SongMenu(
         AddToPlaylistDialog(
             navController = navController,
             songIds = listOf(song.id),
-            onPreAdd = { playlist ->
-                playlist.playlist.browseId?.let { browseId ->
-                    YouTube.addToPlaylist(browseId, song.id)
-                }
-                listOf(song.id)
-            },
+            onPreAdd = { listOf(song.id) },
             onDismiss = { showChoosePlaylistDialog = false }
         )
     }

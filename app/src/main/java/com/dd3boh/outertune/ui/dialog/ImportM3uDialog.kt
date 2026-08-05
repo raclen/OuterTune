@@ -29,7 +29,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Input
 import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -87,7 +86,6 @@ fun ImportM3uDialog(
         mutableStateOf(ScannerM3uMatchCriteria.LEVEL_1)
     }
 
-    var remoteLookup by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var showChoosePlaylistDialog by rememberSaveable {
         mutableStateOf(false)
@@ -107,7 +105,6 @@ fun ImportM3uDialog(
                         snackbarHostState = snackbarHostState,
                         uri = uri,
                         matchStrength = scannerSensitivity,
-                        searchOnline = remoteLookup
                     )
                     importedSongs.clear()
                     importedSongs.addAll(result.first)
@@ -143,19 +140,6 @@ fun ImportM3uDialog(
                 }
             }
         )
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Checkbox(
-                checked = remoteLookup,
-                onCheckedChange = { remoteLookup = it }
-            )
-            Text(
-                stringResource(R.string.m3u_ytm_lookup), color = MaterialTheme.colorScheme.secondary,
-                fontSize = 14.sp
-            )
-        }
 
         Row(
             horizontalArrangement = Arrangement.End,
@@ -290,7 +274,6 @@ fun ImportM3uDialog(
     if (showChoosePlaylistDialog) {
         AddToPlaylistDialog(
             navController = navController,
-            allowSyncing = false,
             initialTextFieldValue = importedTitle,
             songIds = importedSongs.map { it.id },
             onPreAdd = {
@@ -312,7 +295,6 @@ fun ImportM3uDialog(
  *
  * @param uri Uri for m3u file
  * @param matchStrength How lax should the scanner be
- * @param searchOnline Whether to enable fallback for trying to find the song on YTM
  */
 suspend fun loadM3u(
     context: Context,
@@ -320,7 +302,6 @@ suspend fun loadM3u(
     snackbarHostState: SnackbarHostState,
     uri: Uri,
     matchStrength: ScannerM3uMatchCriteria = ScannerM3uMatchCriteria.LEVEL_1,
-    searchOnline: Boolean = false
 ): Triple<ArrayList<Song>, ArrayList<String>, String> {
     val songs = ArrayList<Song>()
     val rejectedSongs = ArrayList<String>()
@@ -353,7 +334,7 @@ suspend fun loadM3u(
                         val matches = if (source == null) {
                             database.searchSongsInDb(title).first().toMutableList()
                         } else {
-                            // local songs have a source format of "<id>, <path>", YTM songs have "<url>
+                            // 本地歌曲格式为 "<id>, <path>"，在线歌曲可能只保存 URL。
                             var id = source.substringBefore(',')
                             if (id.isEmpty()) {
                                 id = source.substringAfter("watch?").substringAfter("=").substringBefore('?')
@@ -362,28 +343,10 @@ suspend fun loadM3u(
                             dbResult.addAll(database.searchSongsInDb(title).first())
                             dbResult.filterNotNull().toMutableList()
                         }
-                        // do not search for local songs
-                        if (searchOnline && matches.isEmpty() && source?.contains(',') == false) {
-                            val onlineResult =
-                                LocalMediaScanner.youtubeSongLookup("$title ${artists.joinToString(" ")}", source)
-                            onlineResult.forEach { result ->
-                                val result = Song(
-                                    song = result.toSongEntity(),
-                                    artists = result.artists.map {
-                                        ArtistEntity(
-                                            id = it.id ?: ArtistEntity.generateArtistId(),
-                                            name = it.name
-                                        )
-                                    }
-                                )
-                                matches.add(result)
-                            }
-                        }
                         val oldSize = songs.size
                         var foundOne = false // TODO: Eventually the user can pick from matches... eventually...
 
-                        // take first song when searching on YTM
-                        if (matchStrength == ScannerM3uMatchCriteria.LEVEL_0 && searchOnline && matches.isNotEmpty()) {
+                        if (matchStrength == ScannerM3uMatchCriteria.LEVEL_0 && matches.isNotEmpty()) {
                             songs.add(matches.first())
                         } else {
                             for (s in matches) {

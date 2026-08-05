@@ -27,7 +27,6 @@ import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.Storage
-import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -83,7 +82,7 @@ fun SettingsScreen(
         ) {
             PreferenceEntry(
                 title = { Text("洛雪音源") },
-                description = "导入 JS 音源与选择播放音质",
+                description = "导入 JS 音源与设置播放、下载音质",
                 icon = { Icon(Icons.Rounded.MusicNote, null) },
                 onClick = { navController.navigate("settings/lx_source") }
             )
@@ -139,17 +138,6 @@ fun SettingsScreen(
                 title = { Text(stringResource(R.string.storage)) },
                 icon = { Icon(Icons.Rounded.Storage, null) },
                 onClick = { navController.navigate("settings/storage") }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.experimental_settings_title)) },
-                icon = { Icon(Icons.Rounded.WarningAmber, null) },
-                onClick = { navController.navigate("settings/experimental") }
             )
         }
         Spacer(modifier = Modifier.height(16.dp))

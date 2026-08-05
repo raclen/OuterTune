@@ -2,11 +2,10 @@
 <resources>
     <string name="folders">文件夹</string>
     <string name="create_queue">新建队列</string>
-    <string name="create_sync_playlist_description">注意：这允许与 YouTube Music 同步。这在以后是不可更改的。您无法将本地歌曲添加到同步的播放列表中。</string>
     <string name="local_library_enable_description">禁用将在应用程序中隐藏本地库</string>
     <string name="slim_navbar_description">删除文本标签以降低导航栏高度</string>
     <string name="library">媒体库</string>
-    <string name="recent_activity">最近的活动</string>
+    <string name="recent_activity">最近播放</string>
     <string name="local_history">本地</string>
     <string name="remote_history">远程</string>
     <string name="queue_searched_songs_ot">搜索：</string>
@@ -24,9 +23,7 @@
     <string name="sort_by_date_released">发布日期</string>
     <string name="sort_by_like_date">收藏日期</string>
     <string name="sort_by_play_count">播放次数</string>
-    <string name="create_sync_playlist">同步播放列表</string>
     <string name="play_count">播放次数</string>
-    <string name="sync_progress_active">正在与 YouTube 帐户同步…</string>
     <string name="sync_progress_success">同步完成</string>
     <string name="prefs_advanced">高级</string>
     <string name="settings_debug">调试</string>
@@ -55,7 +52,6 @@
     <string name="like_autodownload">自动下载您喜欢的歌曲</string>
     <string name="token_hidden">点按以显示令牌</string>
     <string name="token_shown">再次点击以复制或编辑</string>
-    <string name="ytm_sync">自动与您的 YouTube Music 帐户同步</string>
     <string name="wifi_only">仅限 Wi-Fi</string>
     <string name="audio_offload">启用音频分流</string>
     <string name="audio_offload_description">使用分流音频路径进行音频播放。启用此功能可能会降低功耗，但可能会导致音频播放或后期处理出现问题。此偏好设置对不支持的编解码器或设备无效</string>
@@ -91,9 +87,6 @@
     <string name="scanner_progress_scanning">扫描..…</string>
     <string name="scanner_progress_syncing">同步..…</string>
     <string name="scanner_scan_fail">扫描失败</string>
-    <string name="scanner_ytm_link_fail">YouTube 音乐人链接任务失败</string>
-    <string name="scanner_ytm_link_start">正在关联 YouTube 音乐人…</string>
-    <string name="scanner_ytm_link_success">YouTube 音乐人链接任务已完成</string>
     <plurals name="scanner_n_song_processed">
         <item quantity="other">已处理 %d 首歌曲</item>
     </plurals>
@@ -108,7 +101,6 @@
     <string name="scanner_type_taglib">使用集成的 TagLib 元数据提取器</string>
     <string name="scanner_type_ffmpeg_ext">使用 FFmpeg 元数据提取器。需要安装外部软件包</string>
     <string name="scanner_variant_rescan">重新扫描整个音乐库并重新加载所有歌曲的元数据</string>
-    <string name="scanner_online_artist_linking">尝试将本地文件的音乐人与 YouTube Music 上的音乐人相关联</string>
     <string name="import_failed_songs">无法导入：</string>
     <string name="dev_settings_title">启用开发人员设置</string>
     <string name="dev_settings_description">显示用于开发的其他高级设置</string>
@@ -119,7 +111,6 @@
     <string name="action_next">下一个</string>
     <string name="action_skip">跳过</string>
     <string name="info">信息</string>
-    <string name="playlist_add_local_to_synced_note">注意：不支持将本地歌曲添加到同步/远程播放列表。任何其他组合均有效</string>
     <string name="player_background_style">播放器背景样式</string>
     <string name="scanner_missing_storage_perm">扫描需要存储权限</string>
     <string name="local_library_enable_title">启用本地媒体</string>
@@ -131,7 +122,6 @@
     <string name="token_adv_login_description">这是高级登录方法。作为门户网站的替代方法，您可以直接在此输入或更新登录令牌。例如，这可以加快在多个设备上登录的速度。请注意，应用程序无法解析的任何无效令牌格式都不会被接受</string>
     <string name="queue_local_history">历史（本地）</string>
     <string name="queue_remote_history">历史记录（远程）</string>
-    <string name="pause_remote_listen_history">与 YouTube Music 分享收听记录</string>
     <string name="queues_empty">无播放队列</string>
     <string name="speed_fast">快速</string>
     <string name="speed_very_fast">非常快速</string>
@@ -150,17 +140,14 @@
     <string name="lyrics_karaoke_title">卡拉ok风格歌词。</string>
     <string name="m3u_export">导出为M3U文件</string>
     <string name="m3u_import_failed">没有找到歌曲。无效的M3U文件，或没有找到匹配的歌曲</string>
-    <string name="m3u_ytm_lookup">在YouTube音乐中搜索不在APP数据库中的歌曲</string>
     <string name="more_settings">更多设置</string>
     <string name="no_updates_available">没有可用的更新</string>
     <string name="missing_media_permission_warning">需要获取存储权限以获得本地媒体。点此授予权限。</string>
-    <string name="oobe_ad_free_exp">去除 YouTube 广告</string>
+    <string name="oobe_ad_free_exp">无广告播放</string>
     <string name="oobe_ad_free_exp_description">享受不间断的音乐播放</string>
     <string name="oobe_cross_platform_sync">跨平台同步</string>
     <string name="swipe_to_skip_title">水平划动以更换曲目</string>
     <string name="swipe_to_skip_description">开启在播放器中水平划动切换曲目</string>
-    <string name="oobe_ytm_integration">合并YouTube音乐</string>
-    <string name="oobe_ytm_integration_description">无缝进入你最喜欢的曲目</string>
     <string name="oobe_local_music_support">扩展的本地音乐支持</string>
     <string name="oobe_local_music_support_description">播放你的歌曲文件（例如MP3, OGG, FLAC等）</string>
     <string name="oobe_cross_platform_sync_description">保持你的音乐在不同设备中同调</string>
@@ -172,14 +159,12 @@
     <string name="disable_lm_confirm">您确定要禁用本地媒体功能吗？您库中的内容不会被影响。</string>
     <string name="scan_paths_description">选择本地存储上的文件夹来扫描歌曲</string>
     <string name="oobe_local_media_title">本地歌曲</string>
-    <string name="oobe_ytm_logon_subtitle">登录你的YouTube音乐账号以同步和进入私人账户内容。此为可选项。</string>
     <string name="oobe_complete_title">全部设置完毕！</string>
     <string name="oobe_local_media_subtitle">选择拥有你的音乐的文件夹。我们将扫描并导入这些文件夹中的曲目.</string>
     <string name="oobe_downloads_subtitle">选择保存下载的文件夹。</string>
     <string name="speed_very_slow">非常缓慢</string>
     <string name="queues_title">播放队列</string>
     <string name="tap_show_more">点击以显示更多信息</string>
-    <string name="err_invalid_ytm_song">播放歌曲失败。只能播放在 YouTube Music 上可用的内容</string>
     <string name="playlist_missing_note">缺少播放列表？点击此处在设置中启用同步读写模式</string>
     <string name="app_info_title">应用信息</string>
     <string name="checking_for_update">检查更新</string>
@@ -204,7 +189,7 @@
     <string name="scanner_btn_idle">扫描</string>
     <string name="scanner_progress_complete">扫描完成</string>
     <string name="scanner_progress_processing">处理中…</string>
-    <string name="scanner_sensitivity_L0">如果已启用 YouTube 搜索，则获取 YouTube 提供的第一个结果；否则，获取匹配标题的结果</string>
+    <string name="scanner_sensitivity_L0">优先使用数据库中的第一个候选结果</string>
     <string name="clear_downloads_confirm">确定要移除所有下载内容吗？只会移除主下载文件夹中的下载内容。</string>
     <string name="clear_image_cache_confirm">确定要清除图像缓存吗？所有现有相册缩略图都将被删除。</string>
     <string name="dl_calculate_size">点击以计算下载大小</string>
@@ -228,7 +213,6 @@
     <string name="dl_size_used_main">外部存储：已使用 %s</string>
     <string name="dl_size_used_extra">附加输入：已使用 %s</string>
     <string name="restart_to_apply_changes">应用需要重启以使更改生效</string>
-    <string name="oobe_ytm_logon_title">账户</string>
     <string name="oobe_downloads_title">歌曲下载</string>
     <plurals name="second">
         <item quantity="other">%d 秒</item>
@@ -246,7 +230,6 @@
     <string name="disc_number">碟号</string>
     <string name="track_number">曲目编号</string>
     <string name="grp_more_settings">更多设置</string>
-    <string name="action_logout_tooltip">要完全退出登录，请先在网页上退出您的 YouTube 帐户，然后再点击此退出按钮。</string>
     <string name="seek_increment">快进/快退间隔</string>
     <string name="auto_scanner_tooltip">对于本地媒体，自动扫描不会重新载入已有歌曲的元数据。如需刷新元数据，请勾选“重新扫描”选项后使用手动扫描功能。</string>
     <string name="scanner_auto_end">本地媒体和歌曲下载刷新完成！</string>
@@ -258,8 +241,14 @@
     <string name="dl_rescan_confirm">是否立即重新扫描所有下载文件夹？这可能需要几分钟，具体取决于您的媒体库大小。</string>
     <string name="dl_storage_tooltip">内部下载保存在应用的私有存储空间，没有 root 权限将无法访问。外部下载保存在您设备的外部存储空间（例如，/sdcard 或 micro SD 卡），可以使用文件管理器直接访问或编辑。对于“外部下载”文件夹，我们建议您选择一个专门用于歌曲下载的空文件夹，因为 OuterTune 可能会修改或删除该文件夹中的文件。\n\n额外导入文件夹是只读的，用于加载额外的歌曲。OuterTune 绝不会更改或删除这些文件夹中的文件。您可以在高级设置部分选择这些文件夹。\n\n当您清除下载时，只有内部歌曲会被删除。外部下载和额外导入的歌曲必须手动移除，可以通过歌曲菜单操作，也可以通过文件管理器手动删除。\n\n重新扫描下载文件夹： “外部下载”和“额外导入”文件夹中的歌曲不会自动更新。如果您使用文件管理器手动添加、移除或更改了文件，您可能需要重新扫描下载文件夹来更新应用的数据库。此选项可在高级设置部分找到。</string>
     <string name="max_queues_title">最大播放队列数</string>
-    <string name="oobe_welcome_tip">为了获得最佳体验，我们建议您立即完成快速设置，以便对主题、YouTube 帐户、本地媒体和下载等关键功能进行个性化配置。</string>
+    <string name="oobe_welcome_tip">建议完成快速设置，以便配置主题、本地媒体、洛雪音源和下载等关键功能。</string>
     <string name="oobe_cache_title">歌曲缓存</string>
-    <string name="oobe_cache_subtitle">设置歌曲缓存容量。此操作有助于解决网络或 YouTube API 播放时出现的问题</string>
+    <string name="oobe_cache_subtitle">设置歌曲缓存容量，可减少网络波动对在线播放的影响</string>
     <string name="restore_lm_tooltip">对于全新安装的应用，自定义下载路径和本地媒体扫描路径可能无法正常工作。要解决此问题，请先移除这些路径，然后重新添加。</string>
+    <string name="no_recent_plays">还没有播放记录</string>
+    <string name="high_contrast" translatable="false">高对比度模式兼容</string>
+    <string name="high_contrast_description" translatable="false">开启后修复 Android 高对比度模式下的部分显示问题</string>
+    <string name="audio_gapless_offload" translatable="false">无缝硬件卸载</string>
+    <string name="audio_gapless_offload_description" translatable="false">设备和音频格式支持时允许无缝硬件卸载；若连续播放异常，建议关闭此选项</string>
+    <string name="scanner_type_mediastore" translatable="false">（测试）使用系统媒体库扫描器和解析器</string>
 </resources>

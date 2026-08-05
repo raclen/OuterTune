@@ -128,7 +128,7 @@ fun SongListItem(
             },
             thumbnailContent = {
                 ItemThumbnail(
-                    thumbnailUrl = song.song.thumbnailUrl,
+                    thumbnailUrl = song.song.thumbnailUrl ?: song.song.localPath,
                     preferredSize = thumbnailSize,
                     albumIndex = albumIndex,
                     isActive = isActive,

@@ -3,9 +3,7 @@ package com.dd3boh.outertune.models
 import androidx.compose.runtime.Immutable
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongEntity
-import com.dd3boh.outertune.ui.utils.resize
 import com.dd3boh.outertune.utils.LocalArtworkPath
-import com.zionhuang.innertube.models.SongItem
 import java.io.Serializable
 import java.time.LocalDateTime
 import java.time.ZoneOffset
@@ -158,25 +156,4 @@ fun Song.toMediaMetadata() = MediaMetadata(
     sourceData = song.sourceData,
     isLocal = song.isLocal,
     localPath = song.localPath
-)
-
-fun SongItem.toMediaMetadata() = MediaMetadata(
-    id = id,
-    title = title,
-    artists = artists.map {
-        MediaMetadata.Artist(
-            id = it.id,
-            name = it.name
-        )
-    },
-    duration = duration ?: -1,
-    thumbnailUrl = thumbnail.resize(544, 544),
-    album = album?.let {
-        MediaMetadata.Album(
-            id = it.id,
-            title = it.name
-        )
-    },
-    genre = null,
-    setVideoId = setVideoId
 )

@@ -4,11 +4,6 @@ import androidx.compose.runtime.Immutable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.dd3boh.outertune.utils.syncCoroutine
-import com.zionhuang.innertube.YouTube
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import org.apache.commons.lang3.RandomStringUtils
 import java.time.LocalDateTime
 
@@ -33,13 +28,7 @@ data class AlbumEntity(
         bookmarkedAt = if (bookmarkedAt != null) null else LocalDateTime.now()
     )
 
-    fun toggleLike() = localToggleLike().also {
-        CoroutineScope(syncCoroutine).launch {
-            if (playlistId != null)
-                YouTube.likePlaylist(playlistId, bookmarkedAt == null)
-            this.cancel()
-        }
-    }
+    fun toggleLike() = localToggleLike()
 
     companion object {
         fun generateAlbumId() = "LB" + RandomStringUtils.insecure().next(8, true, false)

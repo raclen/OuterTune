@@ -153,14 +153,14 @@ fun AboutScreen(
             IconLabelButton(
                 text = "GitHub",
                 painter = painterResource(R.drawable.github),
-                onClick = { uriHandler.openUri("https://github.com/OuterTune/OuterTune") },
+                onClick = { uriHandler.openUri("https://github.com/raclen/OuterTune") },
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
 
             IconLabelButton(
                 text = stringResource(R.string.wiki),
                 icon = Icons.Outlined.Info,
-                onClick = { uriHandler.openUri("https://github.com/OuterTune/OuterTune/wiki") },
+                onClick = { uriHandler.openUri("https://github.com/raclen/OuterTune/wiki") },
                 modifier = Modifier.padding(horizontal = 8.dp)
             )
         }
@@ -194,13 +194,13 @@ fun AboutScreen(
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.help_bug_report_action)) },
                     onClick = {
-                        uriHandler.openUri("https://github.com/OuterTune/OuterTune/issues")
+                        uriHandler.openUri("https://github.com/raclen/OuterTune/issues")
                     }
                 )
                 PreferenceEntry(
                     title = { Text(stringResource(R.string.help_support_forum)) },
                     onClick = {
-                        uriHandler.openUri("https://github.com/OuterTune/OuterTune/discussions")
+                        uriHandler.openUri("https://github.com/raclen/OuterTune/discussions")
                     }
                 )
                 PreferenceEntry(

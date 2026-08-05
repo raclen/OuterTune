@@ -107,10 +107,8 @@ import com.dd3boh.outertune.constants.DEFAULT_ENABLED_TABS
 import com.dd3boh.outertune.constants.DownloadPathKey
 import com.dd3boh.outertune.constants.EnabledFiltersKey
 import com.dd3boh.outertune.constants.EnabledTabsKey
-import com.dd3boh.outertune.constants.InnerTubeCookieKey
 import com.dd3boh.outertune.constants.LibraryFilterKey
 import com.dd3boh.outertune.constants.LocalLibraryEnableKey
-import com.dd3boh.outertune.constants.LyricTrimKey
 import com.dd3boh.outertune.constants.MaxSongCacheSizeKey
 import com.dd3boh.outertune.constants.NavigationBarHeight
 import com.dd3boh.outertune.constants.OOBE_VERSION
@@ -125,7 +123,6 @@ import com.dd3boh.outertune.ui.component.button.IconLabelButton
 import com.dd3boh.outertune.ui.dialog.ActionPromptDialog
 import com.dd3boh.outertune.ui.dialog.InfoLabel
 import com.dd3boh.outertune.ui.screens.Screens.LibraryFilter
-import com.dd3boh.outertune.ui.screens.settings.fragments.AccountFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.LocalScannerFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.LocalizationFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.ThemeAppFrag
@@ -135,7 +132,6 @@ import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.scanners.stringFromUriList
 import com.dd3boh.outertune.utils.scanners.uriListFromString
-import com.zionhuang.innertube.utils.parseCookieString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -155,12 +151,6 @@ fun SetupWizard(
     // content prefs
     var filter by rememberEnumPreference(LibraryFilterKey, LibraryFilter.ALL)
 
-
-    val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
-    val isLoggedIn = remember(innerTubeCookie) {
-        "SAPISID" in parseCookieString(innerTubeCookie)
-    }
-    val (ytmSync, onYtmSyncChange) = rememberPreference(LyricTrimKey, defaultValue = true)
 
     // local media prefs
     val (localLibEnable, onLocalLibEnableChange) = rememberPreference(LocalLibraryEnableKey, defaultValue = true)
@@ -333,8 +323,8 @@ fun SetupWizard(
                                 .padding(start = 16.dp, top = 48.dp, end = 16.dp, bottom = 16.dp)
                         ) {
                             OobeFeatureRow(
-                                title = stringResource(R.string.oobe_ytm_integration),
-                                description = stringResource(R.string.oobe_ytm_integration_description),
+                                title = "洛雪音源",
+                                description = "支持导入自定义 JS 音源并在线播放",
                                 icon = Icons.Rounded.MusicNote,
                                 MaterialTheme.colorScheme.secondary
                             )
@@ -345,8 +335,8 @@ fun SetupWizard(
                                 Color.Red
                             )
                             OobeFeatureRow(
-                                title = stringResource(R.string.oobe_cross_platform_sync),
-                                description = stringResource(R.string.oobe_cross_platform_sync_description),
+                                title = "最近播放",
+                                description = "首页集中展示本地播放记录",
                                 icon = Icons.Rounded.Sync,
                                 MaterialTheme.colorScheme.tertiary
                             )
@@ -440,57 +430,8 @@ fun SetupWizard(
                         }
                     }
 
-                    // account
-                    2 -> {
-                        Icon(
-                            imageVector = Icons.Rounded.AccountCircle,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(80.dp)
-                                .padding(16.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-
-                        Text(
-                            text = stringResource(R.string.oobe_ytm_logon_title),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Bold,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp)
-                        )
-
-                        Text(
-                            text = stringResource(R.string.oobe_ytm_logon_subtitle),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 32.dp)
-                        )
-
-
-                        ElevatedCard(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            AccountFrag(navController)
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        ElevatedCard(
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            SwitchPreference(
-                                title = { Text(stringResource(R.string.ytm_sync)) },
-                                icon = { Icon(Icons.Rounded.Lyrics, null) },
-                                checked = ytmSync,
-                                onCheckedChange = onYtmSyncChange,
-                                isEnabled = isLoggedIn
-                            )
-                        }
-                    }
-
                     // local media
-                    3 -> {
+                    2 -> {
                         Icon(
                             imageVector = Icons.Rounded.LibraryMusic,
                             contentDescription = null,
@@ -559,7 +500,7 @@ fun SetupWizard(
                     }
 
                     // downloads
-                    4 -> {
+                    3 -> {
                         val downloadUtil = LocalDownloadUtil.current
                         val (downloadPath, onDownloadPathChange) = rememberPreference(DownloadPathKey, "")
                         val (maxSongCacheSize, onMaxSongCacheSizeChange) = rememberPreference(
@@ -777,7 +718,7 @@ fun SetupWizard(
                     }
 
                     // exit page
-                    5 -> {
+                    4 -> {
                         Column(
                             modifier = Modifier.fillMaxSize(),
                             horizontalAlignment = Alignment.CenterHorizontally,

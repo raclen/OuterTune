@@ -1,6 +1,8 @@
 package com.dd3boh.outertune.lyrics
 
 import android.content.Context
+import android.os.ParcelFileDescriptor
+import com.kyant.taglib.TagLib
 import org.akanework.gramophone.logic.utils.LrcUtils
 import org.akanework.gramophone.logic.utils.LrcUtils.loadAndParseLyricsFile
 import org.akanework.gramophone.logic.utils.SemanticLyrics
@@ -35,5 +37,22 @@ object LocalLyricsProvider : LyricsProvider {
         // TODO: audiomimetype
         return loadAndParseLyricsFile(File(path), null, parserOptions)
     }
+
+    fun getEmbeddedLyrics(
+        path: String,
+        parserOptions: LrcUtils.LrcParserOptions
+    ): SemanticLyrics? = runCatching {
+        val file = File(path)
+        ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY).use { fd ->
+            val lyrics = TagLib.getMetadata(fd.dup().detachFd(), readPictures = false)
+                ?.propertyMap
+                ?.asSequence()
+                ?.filter { (key, _) -> key == "LYRICS" || key == "UNSYNCEDLYRICS" || key.startsWith("LYRICS:") }
+                ?.flatMap { (_, values) -> values.asSequence() }
+                ?.firstOrNull { it.isNotBlank() }
+                ?: return@use null
+            LrcUtils.parseLyrics(lyrics, null, parserOptions, null)
+        }
+    }.getOrNull()
 
 }

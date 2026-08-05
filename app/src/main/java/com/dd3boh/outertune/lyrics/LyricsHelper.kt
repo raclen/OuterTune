@@ -23,28 +23,26 @@ class LyricsHelper @Inject constructor(
     @ApplicationContext private val context: Context,
     val database: MusicDatabase
 ) {
-    private val lyricsProviders =
-        listOf(YouTubeSubtitleLyricsProvider, LrcLibLyricsProvider, KuGouLyricsProvider, YouTubeLyricsProvider)
+    private val lyricsProviders = listOf(LrcLibLyricsProvider, KuGouLyricsProvider)
     private val cache = LruCache<String, List<LyricsResult>>(MAX_CACHE_SIZE)
 
     /**
-     * Retrieve lyrics from all sources
+     * 获取歌曲歌词。
      *
-     * How lyrics are resolved are determined by PreferLocalLyrics settings key. If this is true, prioritize local lyric
-     * files over all cloud providers, true is vice versa.
+     * 内嵌歌词始终优先；不存在内嵌歌词时，再根据本地歌词偏好决定同目录歌词、数据库缓存和在线源的顺序。
      *
-     * Lyrics stored in the database are fetched first. If this is not available, it is resolved by other means.
-     * If local lyrics are preferred, lyrics from the lrc file is fetched, and then resolve by other means.
-     *
-     * @param mediaMetadata Song to fetch lyrics for
-     * @param database MusicDatabase connection. Database lyrics are prioritized over all sources.
-     * If no database is provided, the database source is disabled
+     * @param mediaMetadata 待获取歌词的歌曲
      */
     suspend fun getLyrics(mediaMetadata: MediaMetadata): SemanticLyrics? {
         val trim = context.dataStore.get(LyricTrimKey, defaultValue = false)
         val multiline = context.dataStore.get(MultilineLrcKey, defaultValue = true)
 
         val prefLocal = context.dataStore.get(LyricSourcePrefKey, true)
+
+        val parserOptions = LrcUtils.LrcParserOptions(trim, multiline, "Unable to parse lyrics")
+        getEmbeddedLyrics(mediaMetadata, parserOptions)?.let {
+            return it
+        }
 
         val cached = cache.get(mediaMetadata.id)?.firstOrNull()
         if (cached != null) {
@@ -56,7 +54,7 @@ class LyricsHelper @Inject constructor(
         }
 
         val localLyrics: SemanticLyrics? =
-            getLocalLyrics(mediaMetadata, LrcUtils.LrcParserOptions(trim, multiline, "Unable to parse lyrics"))
+            getLocalLyrics(mediaMetadata, parserOptions)
         val remoteLyrics: String?
 
         // fallback to secondary provider when primary is unavailable
@@ -146,6 +144,15 @@ class LyricsHelper @Inject constructor(
         }
 
         return null
+    }
+
+    private fun getEmbeddedLyrics(
+        mediaMetadata: MediaMetadata,
+        parserOptions: LrcUtils.LrcParserOptions
+    ): SemanticLyrics? {
+        return mediaMetadata.localPath?.let { path ->
+            LocalLyricsProvider.getEmbeddedLyrics(path, parserOptions)
+        }
     }
 
     suspend fun getAllLyrics(

@@ -13,8 +13,7 @@ import androidx.media3.exoplayer.offline.Download
 import com.dd3boh.outertune.constants.MAX_COIL_JOBS
 import com.dd3boh.outertune.constants.MAX_DL_JOBS
 import com.dd3boh.outertune.constants.MAX_LM_SCANNER_JOBS
-import com.dd3boh.outertune.constants.MAX_YTM_CONTENT_JOBS
-import com.dd3boh.outertune.constants.MAX_YTM_SYNC_JOBS
+import com.dd3boh.outertune.constants.MAX_SYNC_JOBS
 import com.dd3boh.outertune.playback.DownloadUtil
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
@@ -36,9 +35,7 @@ val dlCoroutine = Dispatchers.IO.limitedParallelism(MAX_DL_JOBS)
 
 val coilCoroutine = Dispatchers.IO.limitedParallelism(MAX_COIL_JOBS)
 
-val syncCoroutine = Dispatchers.IO.limitedParallelism(MAX_YTM_SYNC_JOBS)
-
-val ytmCoroutine = Dispatchers.IO.limitedParallelism(MAX_YTM_CONTENT_JOBS)
+val syncCoroutine = Dispatchers.IO.limitedParallelism(MAX_SYNC_JOBS)
 
 @OptIn(DelicateCoroutinesApi::class)
 val playerCoroutine = newFixedThreadPoolContext(4, "player_service_offload")

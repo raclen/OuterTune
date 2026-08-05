@@ -53,7 +53,6 @@ class MediaLibrarySessionCallback @Inject constructor(
     private val scope = CoroutineScope(Dispatchers.Main) + Job()
     lateinit var service: MusicService
     var toggleLike: () -> Unit = {}
-    var toggleStartRadio: () -> Unit = {}
     var toggleLibrary: () -> Unit = {}
 
     override fun onConnect(
@@ -65,7 +64,6 @@ class MediaLibrarySessionCallback @Inject constructor(
             connectionResult.availableSessionCommands.buildUpon()
                 .add(MediaSessionConstants.CommandToggleLibrary)
                 .add(MediaSessionConstants.CommandToggleLike)
-                .add(MediaSessionConstants.CommandToggleStartRadio)
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
                 .add(SessionCommand(MusicService.COMMAND_GET_BINDER, Bundle.EMPTY))
@@ -82,7 +80,6 @@ class MediaLibrarySessionCallback @Inject constructor(
     ): ListenableFuture<SessionResult> {
         when (customCommand.customAction) {
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
-            MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> toggleStartRadio()
             MediaSessionConstants.ACTION_TOGGLE_LIBRARY -> toggleLibrary()
             MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> session.player.toggleShuffleMode()
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()

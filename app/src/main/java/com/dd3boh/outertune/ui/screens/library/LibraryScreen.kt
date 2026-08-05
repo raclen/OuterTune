@@ -30,9 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -122,13 +119,6 @@ fun LibraryScreen(
     val (showLikedAndDownloadedPlaylist) = rememberPreference(ShowLikedAndDownloadedPlaylist, true)
 
     val allItems by viewModel.allItems.collectAsState()
-
-    val isSyncingRemotePlaylists by viewModel.isSyncingRemotePlaylists.collectAsState()
-    val isSyncingRemoteAlbums by viewModel.isSyncingRemoteAlbums.collectAsState()
-    val isSyncingRemoteArtists by viewModel.isSyncingRemoteArtists.collectAsState()
-    val isSyncingRemoteSongs by viewModel.isSyncingRemoteSongs.collectAsState()
-    val isSyncingRemoteLikedSongs by viewModel.isSyncingRemoteLikedSongs.collectAsState()
-    val pullRefreshState = rememberPullToRefreshState()
 
     val likedPlaylist = PlaylistEntity(id = "liked", name = stringResource(id = R.string.liked_songs))
     val downloadedPlaylist = PlaylistEntity(id = "downloaded", name = stringResource(id = R.string.downloaded_songs))
@@ -223,12 +213,6 @@ fun LibraryScreen(
                     },
                     modifier = Modifier.weight(1f),
                     selected = { it == filterSelected },
-                    isLoading = { filter ->
-                        (filter == LibraryFilter.PLAYLISTS && isSyncingRemotePlaylists)
-                                || (filter == LibraryFilter.ALBUMS && isSyncingRemoteAlbums)
-                                || (filter == LibraryFilter.ARTISTS && isSyncingRemoteArtists)
-                                || (filter == LibraryFilter.SONGS && (isSyncingRemoteSongs || isSyncingRemoteLikedSongs))
-                    }
                 )
 
                 if (filter != LibraryFilter.SONGS && filter != LibraryFilter.FOLDERS) {
@@ -287,15 +271,7 @@ fun LibraryScreen(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .pullToRefresh(
-                state = pullRefreshState,
-                isRefreshing = isSyncingRemotePlaylists || isSyncingRemoteAlbums || isSyncingRemoteArtists
-                        || isSyncingRemoteSongs || isSyncingRemoteLikedSongs,
-                onRefresh = {
-                    viewModel.syncAll(true)
-                }
-            ),
+            .fillMaxSize(),
     ) {
         when (filter) {
             LibraryFilter.ALBUMS ->
@@ -563,13 +539,5 @@ fun LibraryScreen(
             }
         }
 
-        Indicator(
-            isRefreshing = isSyncingRemotePlaylists || isSyncingRemoteAlbums || isSyncingRemoteArtists
-                    || isSyncingRemoteSongs || isSyncingRemoteLikedSongs,
-            state = pullRefreshState,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(LocalPlayerAwareWindowInsets.current.asPaddingValues()),
-        )
     }
 }

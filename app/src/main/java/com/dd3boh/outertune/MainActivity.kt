@@ -135,20 +135,14 @@ import com.dd3boh.outertune.ui.component.shimmer.ShimmerTheme
 import com.dd3boh.outertune.ui.menu.BottomSheetMenu
 import com.dd3boh.outertune.ui.menu.MenuState
 import com.dd3boh.outertune.ui.player.BottomSheetPlayer
-import com.dd3boh.outertune.ui.screens.AccountScreen
 import com.dd3boh.outertune.ui.screens.AlbumScreen
-import com.dd3boh.outertune.ui.screens.BrowseScreen
 import com.dd3boh.outertune.ui.screens.HistoryScreen
 import com.dd3boh.outertune.ui.screens.HomeScreen
-import com.dd3boh.outertune.ui.screens.LoginScreen
-import com.dd3boh.outertune.ui.screens.MoodAndGenresScreen
 import com.dd3boh.outertune.ui.screens.PlayerScreen
 import com.dd3boh.outertune.ui.screens.Screens
 import com.dd3boh.outertune.ui.screens.SetupWizard
 import com.dd3boh.outertune.ui.screens.StatsScreen
-import com.dd3boh.outertune.ui.screens.YouTubeBrowseScreen
 import com.dd3boh.outertune.ui.screens.artist.ArtistAlbumsScreen
-import com.dd3boh.outertune.ui.screens.artist.ArtistItemsScreen
 import com.dd3boh.outertune.ui.screens.artist.ArtistScreen
 import com.dd3boh.outertune.ui.screens.artist.ArtistSongsScreen
 import com.dd3boh.outertune.ui.screens.library.FolderScreen
@@ -160,15 +154,12 @@ import com.dd3boh.outertune.ui.screens.library.LibraryScreen
 import com.dd3boh.outertune.ui.screens.library.LibrarySongsScreen
 import com.dd3boh.outertune.ui.screens.playlist.AutoPlaylistScreen
 import com.dd3boh.outertune.ui.screens.playlist.LocalPlaylistScreen
-import com.dd3boh.outertune.ui.screens.playlist.OnlinePlaylistScreen
 import com.dd3boh.outertune.ui.screens.search.OnlineSearchResult
 import com.dd3boh.outertune.ui.screens.search.SearchBarContainer
 import com.dd3boh.outertune.ui.screens.settings.AboutScreen
-import com.dd3boh.outertune.ui.screens.settings.AccountSyncSettings
 import com.dd3boh.outertune.ui.screens.settings.AppearanceSettings
 import com.dd3boh.outertune.ui.screens.settings.AttributionScreen
 import com.dd3boh.outertune.ui.screens.settings.BackupAndRestore
-import com.dd3boh.outertune.ui.screens.settings.ExperimentalSettings
 import com.dd3boh.outertune.ui.screens.settings.InterfaceSettings
 import com.dd3boh.outertune.ui.screens.settings.LibrariesScreen
 import com.dd3boh.outertune.ui.screens.settings.LibrarySettings
@@ -182,7 +173,6 @@ import com.dd3boh.outertune.ui.theme.OuterTuneTheme
 import com.dd3boh.outertune.ui.utils.appBarScrollBehavior
 import com.dd3boh.outertune.utils.ActivityLauncherHelper
 import com.dd3boh.outertune.utils.NetworkConnectivityObserver
-import com.dd3boh.outertune.utils.SyncUtils
 import com.dd3boh.outertune.utils.lmScannerCoroutine
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
@@ -200,9 +190,6 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var downloadUtil: DownloadUtil
-
-    @Inject
-    lateinit var syncUtils: SyncUtils
 
     lateinit var activityLauncher: ActivityLauncherHelper
     lateinit var connectivityObserver: NetworkConnectivityObserver
@@ -408,25 +395,6 @@ class MainActivity : ComponentActivity() {
                     )
 
 
-                    DisposableEffect(Unit) {
-                        val listener = Consumer<Intent> { intent ->
-                            val uri =
-                                intent.data ?: intent.extras?.getString(Intent.EXTRA_TEXT)?.toUri()
-                                ?: return@Consumer
-                            youtubeNavigator(
-                                this@MainActivity,
-                                navController,
-                                coroutineScope,
-                                playerConnection,
-                                snackbarHostState,
-                                uri
-                            )
-                        }
-
-                        addOnNewIntentListener(listener)
-                        onDispose { removeOnNewIntentListener(listener) }
-                    }
-
                     CompositionLocalProvider(
                         LocalDatabase provides database,
                         LocalContentColor provides contentColorFor(MaterialTheme.colorScheme.surface),
@@ -435,7 +403,6 @@ class MainActivity : ComponentActivity() {
                         LocalPlayerAwareWindowInsets provides playerAwareWindowInsets,
                         LocalDownloadUtil provides downloadUtil,
                         LocalShimmerTheme provides ShimmerTheme,
-                        LocalSyncUtils provides syncUtils,
                         LocalNetworkConnected provides isNetworkConnected,
                         LocalSnackbarHostState provides snackbarHostState,
                     ) {
@@ -547,27 +514,6 @@ class MainActivity : ComponentActivity() {
                                     composable("stats") {
                                         StatsScreen(navController)
                                     }
-                                    composable("mood_and_genres") {
-                                        MoodAndGenresScreen(navController, scrollBehavior)
-                                    }
-                                    composable("account") {
-                                        AccountScreen(navController, scrollBehavior)
-                                    }
-
-                                    composable(
-                                        route = "browse/{browseId}",
-                                        arguments = listOf(
-                                            navArgument("browseId") {
-                                                type = NavType.StringType
-                                            }
-                                        )
-                                    ) {
-                                        BrowseScreen(
-                                            navController,
-                                            scrollBehavior,
-                                            it.arguments?.getString("browseId")
-                                        )
-                                    }
                                     composable(
                                         route = "search",
                                     ) {
@@ -624,34 +570,6 @@ class MainActivity : ComponentActivity() {
                                         ArtistAlbumsScreen(navController, scrollBehavior)
                                     }
                                     composable(
-                                        route = "artist/{artistId}/items?browseId={browseId}?params={params}",
-                                        arguments = listOf(
-                                            navArgument("artistId") {
-                                                type = NavType.StringType
-                                            },
-                                            navArgument("browseId") {
-                                                type = NavType.StringType
-                                                nullable = true
-                                            },
-                                            navArgument("params") {
-                                                type = NavType.StringType
-                                                nullable = true
-                                            }
-                                        )
-                                    ) {
-                                        ArtistItemsScreen(navController, scrollBehavior)
-                                    }
-                                    composable(
-                                        route = "online_playlist/{playlistId}",
-                                        arguments = listOf(
-                                            navArgument("playlistId") {
-                                                type = NavType.StringType
-                                            }
-                                        )
-                                    ) {
-                                        OnlinePlaylistScreen(navController, scrollBehavior)
-                                    }
-                                    composable(
                                         route = "local_playlist/{playlistId}",
                                         arguments = listOf(
                                             navArgument("playlistId") {
@@ -671,21 +589,6 @@ class MainActivity : ComponentActivity() {
                                     ) {
                                         AutoPlaylistScreen(navController, scrollBehavior)
                                     }
-                                    composable(
-                                        route = "youtube_browse/{browseId}?params={params}",
-                                        arguments = listOf(
-                                            navArgument("browseId") {
-                                                type = NavType.StringType
-                                                nullable = true
-                                            },
-                                            navArgument("params") {
-                                                type = NavType.StringType
-                                                nullable = true
-                                            }
-                                        )
-                                    ) {
-                                        YouTubeBrowseScreen(navController, scrollBehavior)
-                                    }
                                     composable("settings") {
                                         SettingsScreen(navController, scrollBehavior)
                                     }
@@ -700,9 +603,6 @@ class MainActivity : ComponentActivity() {
                                     }
                                     composable("settings/library/lyrics") {
                                         LyricsSettings(navController, scrollBehavior)
-                                    }
-                                    composable("settings/account_sync") {
-                                        AccountSyncSettings(navController, scrollBehavior)
                                     }
                                     composable("settings/lx_source") {
                                         LxSourceSettings(navController, scrollBehavior)
@@ -719,9 +619,6 @@ class MainActivity : ComponentActivity() {
                                     composable("settings/local") {
                                         LocalPlayerSettings(navController, scrollBehavior)
                                     }
-                                    composable("settings/experimental") {
-                                        ExperimentalSettings(navController, scrollBehavior)
-                                    }
                                     composable("settings/about") {
                                         AboutScreen(navController, scrollBehavior)
                                     }
@@ -731,10 +628,6 @@ class MainActivity : ComponentActivity() {
                                     composable("settings/about/oss_licenses") {
                                         LibrariesScreen(navController, scrollBehavior)
                                     }
-                                    composable("login") {
-                                        LoginScreen(navController)
-                                    }
-
                                     composable("setup_wizard") {
                                         SetupWizard(navController)
                                     }
@@ -1067,6 +960,5 @@ val LocalMenuState = staticCompositionLocalOf<MenuState> { error("No menu state 
 val LocalPlayerConnection = staticCompositionLocalOf<PlayerConnection?> { error("No PlayerConnection provided") }
 val LocalPlayerAwareWindowInsets = compositionLocalOf<WindowInsets> { error("No player WindowInsets provided") }
 val LocalDownloadUtil = staticCompositionLocalOf<DownloadUtil> { error("No DownloadUtil provided") }
-val LocalSyncUtils = staticCompositionLocalOf<SyncUtils> { error("No SyncUtils provided") }
 val LocalNetworkConnected = staticCompositionLocalOf<Boolean> { error("No Network Status provided") }
 val LocalSnackbarHostState = staticCompositionLocalOf<SnackbarHostState> { error("No SnackbarHostState provided") }

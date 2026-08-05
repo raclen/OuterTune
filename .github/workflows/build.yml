@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - canary
+      - main
   pull_request:
     branches:
       - '**'

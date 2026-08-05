@@ -57,7 +57,7 @@ object LxSourceRuntime {
         appContext = context.applicationContext
     }
 
-    suspend fun resolve(metadata: MediaMetadata): String = withContext(Dispatchers.IO) {
+    suspend fun resolve(metadata: MediaMetadata, qualityOverride: String? = null): String = withContext(Dispatchers.IO) {
         check(::appContext.isInitialized) { "洛雪音源运行时尚未初始化" }
         val script = appContext.dataStore[LxSourceScriptKey]
             ?.takeIf(String::isNotBlank)
@@ -67,7 +67,7 @@ object LxSourceRuntime {
         val source = metadata.source ?: error("歌曲缺少洛雪来源信息")
         val musicInfo = metadata.sourceData?.let { lxJson.parseToJsonElement(it).jsonObject }
             ?: error("歌曲缺少洛雪音源参数")
-        val quality = appContext.dataStore.get(LxSourceQualityKey, DEFAULT_QUALITY)
+        val quality = qualityOverride ?: appContext.dataStore.get(LxSourceQualityKey, DEFAULT_QUALITY)
         val requestKey = UUID.randomUUID().toString()
         val deferred = CompletableDeferred<JsonObject>()
         pending[requestKey] = deferred

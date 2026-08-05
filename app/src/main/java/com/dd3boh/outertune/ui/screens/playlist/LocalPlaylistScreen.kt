@@ -60,7 +60,6 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -86,16 +85,13 @@ import androidx.compose.ui.util.fastSumBy
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.exoplayer.offline.Download
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
 import com.dd3boh.outertune.LocalMenuState
-import com.dd3boh.outertune.LocalNetworkConnected
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.LocalSnackbarHostState
-import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumCornerRadius
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
@@ -107,14 +103,11 @@ import com.dd3boh.outertune.constants.PlaylistSongSortDescendingKey
 import com.dd3boh.outertune.constants.PlaylistSongSortType
 import com.dd3boh.outertune.constants.PlaylistSongSortTypeKey
 import com.dd3boh.outertune.constants.SwipeToQueueKey
-import com.dd3boh.outertune.constants.SyncMode
-import com.dd3boh.outertune.constants.YtmSyncModeKey
 import com.dd3boh.outertune.db.entities.Playlist
 import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.extensions.move
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
 import com.dd3boh.outertune.ui.component.EmptyPlaceholder
@@ -134,9 +127,7 @@ import com.dd3boh.outertune.ui.utils.getNSongsString
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
-import com.dd3boh.outertune.utils.syncCoroutine
 import com.dd3boh.outertune.viewmodels.LocalPlaylistViewModel
-import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
@@ -160,7 +151,7 @@ fun LocalPlaylistScreen(
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val snackbarHostState = LocalSnackbarHostState.current
-
+    val downloadUtil = LocalDownloadUtil.current
     val playlistWithSongs by viewModel.playlistWithSongs.collectAsState()
 
     val isPlaying by playerConnection.isPlaying.collectAsState()
@@ -171,7 +162,6 @@ fun LocalPlaylistScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(PlaylistSongSortDescendingKey, true)
     var locked by rememberPreference(PlaylistEditLockKey, defaultValue = false)
     val swipeEnabled by rememberPreference(SwipeToQueueKey, true)
-    val syncMode by rememberEnumPreference(key = YtmSyncModeKey, defaultValue = SyncMode.RW)
 
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
     val selection = rememberSaveable(
@@ -228,8 +218,7 @@ fun LocalPlaylistScreen(
         }
     }
 
-    val editable: Boolean =
-        playlistWithSongs.first?.playlist?.isLocal == true || (playlistWithSongs.first?.playlist?.isEditable == true && syncMode == SyncMode.RW)
+    val editable = true
 
     LaunchedEffect(playlistWithSongs.second, isSearching) {
         if (!isSearching) {
@@ -256,9 +245,6 @@ fun LocalPlaylistScreen(
                         update(playlistEntity.copy(name = name))
                     }
 
-                    viewModel.viewModelScope.launch(syncCoroutine) {
-                        playlistEntity.browseId?.let { YouTube.renamePlaylist(it, name) }
-                    }
                 }
             )
         }
@@ -295,12 +281,7 @@ fun LocalPlaylistScreen(
                         }
 
                         playlistWithSongs.second.forEach { song ->
-                            DownloadService.sendRemoveDownload(
-                                context,
-                                ExoDownloadService::class.java,
-                                song.song.id,
-                                false
-                            )
+                            downloadUtil.delete(song.song.id)
                         }
                     }
                 ) {
@@ -340,10 +321,6 @@ fun LocalPlaylistScreen(
                             playlistWithSongs.first?.let { delete(it.playlist) }
                         }
 
-                        viewModel.viewModelScope.launch(Dispatchers.IO) {
-                            playlistWithSongs.first?.playlist?.browseId?.let { YouTube.deletePlaylist(it) }
-                        }
-
                         navController.popBackStack()
                     }
                 ) {
@@ -379,46 +356,6 @@ fun LocalPlaylistScreen(
             dragInfo?.let { (from, to) ->
                 database.transaction {
                     move(viewModel.playlistId, from, to)
-                }
-                if (playlistWithSongs.first?.playlist?.isLocal == false) {
-                    viewModel.viewModelScope.launch(Dispatchers.IO) {
-                        val from = from
-                        val to = to
-                        val playlistSongMap = database.songMapsToPlaylist(viewModel.playlistId, 0)
-
-                        var fromIndex = from //- headerItems
-                        val toIndex = to //- headerItems
-
-                        var successorIndex = if (fromIndex > toIndex) toIndex else toIndex + 1
-
-                        /*
-                        * Because of how YouTube Music handles playlist changes, you necessarily need to
-                        * have the SetVideoId of the successor when trying to move a song inside of a
-                        * playlist.
-                        * For this reason, if we are trying to move a song to the last element of a playlist,
-                        * we need to first move it as penultimate and then move the last element before it.
-                        */
-                        if (successorIndex >= playlistSongMap.size) {
-                            playlistSongMap[fromIndex].setVideoId?.let { setVideoId ->
-                                playlistSongMap[toIndex].setVideoId?.let { successorSetVideoId ->
-                                    playlistWithSongs.first?.playlist?.browseId?.let { browseId ->
-                                        YouTube.moveSongPlaylist(browseId, setVideoId, successorSetVideoId)
-                                    }
-                                }
-                            }
-
-                            successorIndex = fromIndex
-                            fromIndex = toIndex
-                        }
-
-                        playlistSongMap[fromIndex].setVideoId?.let { setVideoId ->
-                            playlistSongMap[successorIndex].setVideoId?.let { successorSetVideoId ->
-                                playlistWithSongs.first?.playlist?.browseId?.let { browseId ->
-                                    YouTube.moveSongPlaylist(browseId, setVideoId, successorSetVideoId)
-                                }
-                            }
-                        }
-                    }
                 }
                 dragInfo = null
             }
@@ -676,9 +613,6 @@ fun LocalPlaylistHeader(
     val playerConnection = LocalPlayerConnection.current ?: return
     val context = LocalContext.current
     val database = LocalDatabase.current
-    val isNetworkConnected = LocalNetworkConnected.current
-    val scope = rememberCoroutineScope()
-    val syncUtils = LocalSyncUtils.current
 
     val playlistLength = remember(songs) {
         songs.fastSumBy { it.song.song.duration }
@@ -760,26 +694,6 @@ fun LocalPlaylistHeader(
                         )
                     }
 
-                    if (playlist.playlist.browseId != null) {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    syncUtils.syncPlaylist(playlist.playlist.browseId, playlist.id)
-                                    snackbarHostState.showSnackbar(
-                                        message = context.getString(R.string.playlist_synced),
-                                        withDismissAction = true
-                                    )
-                                }
-                            },
-                            enabled = isNetworkConnected
-                        ) {
-                            Icon(
-                                imageVector = Icons.Rounded.Sync,
-                                contentDescription = null
-                            )
-                        }
-                    }
-
                     if (songs.any { !it.song.song.isLocal }) {
                         when (downloadState) {
                             Download.STATE_COMPLETED -> {
@@ -797,12 +711,7 @@ fun LocalPlaylistHeader(
                                 IconButton(
                                     onClick = {
                                         songs.forEach { song ->
-                                            DownloadService.sendRemoveDownload(
-                                                context,
-                                                ExoDownloadService::class.java,
-                                                song.song.id,
-                                                false
-                                            )
+                                            downloadUtil.delete(song.song.id)
                                         }
                                     }
                                 ) {

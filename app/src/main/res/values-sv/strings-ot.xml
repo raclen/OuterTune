@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="android_auto">Android Auto</string>
-    <string name="folders">Mappar</string>
-    <string name="library">Bibliotek</string>
-    <string name="recent_activity">Senaste aktiviteten</string>
-    <string name="local_history">Lokal</string>
-</resources>

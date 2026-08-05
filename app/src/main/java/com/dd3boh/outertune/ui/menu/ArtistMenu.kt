@@ -28,7 +28,6 @@ import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.items.ArtistListItem
-import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -89,15 +88,10 @@ fun ArtistMenu(
                             .map { it.toMediaMetadata() }
                     }
 
-                    val playlistId = withContext(Dispatchers.IO) {
-                        YouTube.artist(artist.id).getOrNull()?.artist?.shuffleEndpoint?.playlistId
-                    }
-
                     playerConnection.playQueue(
                         ListQueue(
                             title = artist.artist.name,
-                            items = songs,
-                            playlistId = playlistId
+                            items = songs
                         )
                     )
                 }
@@ -114,33 +108,14 @@ fun ArtistMenu(
                             .shuffled()
                     }
 
-                    val playlistId = withContext(Dispatchers.IO) {
-                        YouTube.artist(artist.id).getOrNull()?.artist?.shuffleEndpoint?.playlistId
-                    }
-
                     playerConnection.playQueue(
                         ListQueue(
                             title = artist.artist.name,
-                            items = songs,
-                            playlistId = playlistId
+                            items = songs
                         )
                     )
                 }
                 onDismiss()
-            }
-        }
-        if (artist.artist.isYouTubeArtist) {
-            GridMenuItem(
-                icon = Icons.Rounded.Share,
-                title = R.string.share
-            ) {
-                onDismiss()
-                val intent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/channel/${artist.id}")
-                }
-                context.startActivity(Intent.createChooser(intent, null))
             }
         }
     }

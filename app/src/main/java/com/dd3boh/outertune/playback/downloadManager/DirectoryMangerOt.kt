@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
-import androidx.documentfile.provider.TreeDocumentFileOt
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.utils.scanners.LocalMediaScanner.Companion.scanDfRecursive
 import com.dd3boh.outertune.utils.scanners.documentFileFromUri
@@ -65,32 +64,53 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
 
     fun deleteFile(mediaId: String): Boolean {
         val file = isExists(mediaId)
-        return file?.delete() == true
+        val deleted = file?.delete() == true
+        if (deleted) {
+            availableFiles = availableFiles - file
+        }
+        return deleted
     }
 
-    fun saveFile(mediaId: String, input: InputStream, displayName: String?): Uri? {
+    fun saveFile(
+        mediaId: String,
+        input: InputStream,
+        displayName: String?,
+        fileExtension: String = ".mka",
+    ): Uri? {
         val resolver = context.contentResolver
-        val directory = DocumentFile.fromTreeUri(context, dir)
+        val directory = mainDir
 
         if (directory == null || !directory.isDirectory) {
             throw IOException("Invalid directory")
         }
 
-        val fileName = "$displayName [$mediaId].mka"
-        val newFile = directory.createFile("audio/mka", fileName)
+        val extension = fileExtension.removePrefix(".").ifBlank { "mka" }
+        val mimeType = when (extension) {
+            "flac" -> "audio/flac"
+            "mp3" -> "audio/mpeg"
+            else -> "audio/mka"
+        }
+        val fileName = "$displayName [$mediaId].$extension"
+        val newFile = directory.createFile(mimeType, fileName)
 
         newFile?.uri?.let { uri ->
-            resolver.openOutputStream(uri)?.use { out ->
-                input.copyTo(out)
+            try {
+                resolver.openOutputStream(uri)?.use { out ->
+                    input.copyTo(out)
+                } ?: throw IOException("Cannot open output stream")
+                availableFiles = availableFiles + newFile
+                return uri
+            } catch (error: Throwable) {
+                newFile.delete()
+                throw error
             }
-            return uri
         }
 
         return null
     }
 
     fun isExists(mediaId: String): DocumentFile? {
-        return availableFiles.find { (it as TreeDocumentFileOt).id == mediaId }
+        return availableFiles.find { it.downloadedMediaId() == mediaId }
     }
 
     fun getFilePathIfExists(mediaId: String): Uri? {
@@ -119,7 +139,7 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
 
         for (file in result) {
             val path = file.name ?: continue
-            availableFiles.put(path.substringAfterLast('[').substringBeforeLast(']'), file.uri)
+            availableFiles[path.substringAfterLast('[').substringBeforeLast(']')] = file.uri
         }
         if (!useCache) {
             this.availableFiles = result.toSet()
@@ -154,3 +174,8 @@ class DownloadDirectoryManagerOt(private var context: Context, private var dir: 
         return result.filter { it.name != null }.sumOf { it.length() }
     }
 }
+
+private fun DocumentFile.downloadedMediaId(): String? = name
+    ?.substringAfterLast('[', missingDelimiterValue = "")
+    ?.substringBeforeLast(']', missingDelimiterValue = "")
+    ?.takeIf { it.isNotBlank() }

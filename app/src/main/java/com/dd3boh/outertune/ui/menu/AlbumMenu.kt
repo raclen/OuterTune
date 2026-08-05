@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.exoplayer.offline.Download.STATE_STOPPED
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
@@ -47,14 +46,12 @@ import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.items.AlbumListItem
 import com.dd3boh.outertune.ui.dialog.AddToPlaylistDialog
 import com.dd3boh.outertune.ui.dialog.AddToQueueDialog
 import com.dd3boh.outertune.ui.dialog.ArtistDialog
 import com.dd3boh.outertune.utils.getDownloadState
-import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -211,12 +208,7 @@ fun AlbumMenu(
                 },
                 onRemoveDownload = {
                     songs.forEach { song ->
-                        DownloadService.sendRemoveDownload(
-                            context,
-                            ExoDownloadService::class.java,
-                            song.id,
-                            false
-                        )
+                        downloadUtil.delete(song.id)
                     }
                 }
             )
@@ -232,39 +224,6 @@ fun AlbumMenu(
                 showSelectArtistDialog = true
             }
         }
-        GridMenuItem(
-            icon = {
-                Icon(
-                    imageVector = Icons.Rounded.Sync,
-                    contentDescription = null,
-                    modifier = Modifier.graphicsLayer(rotationZ = rotationAnimation)
-                )
-            },
-            title = R.string.refetch,
-            enabled = isNetworkConnected
-        ) {
-            refetchIconDegree -= 360
-            scope.launch(Dispatchers.IO) {
-                YouTube.album(album.id).onSuccess {
-                    database.transaction {
-                        update(album.album, it)
-                    }
-                }
-            }
-        }
-        GridMenuItem(
-            icon = Icons.Rounded.Share,
-            title = R.string.share
-        ) {
-            onDismiss()
-            val intent = Intent().apply {
-                action = Intent.ACTION_SEND
-                type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/browse/${album.album.id}")
-            }
-            context.startActivity(Intent.createChooser(intent, null))
-        }
-
     }
 
     /**
@@ -294,14 +253,7 @@ fun AlbumMenu(
         AddToPlaylistDialog(
             navController = navController,
             songIds = songs.map { it.id },
-            onPreAdd = { playlist ->
-                playlist.playlist.browseId?.let { playlistId ->
-                    album.album.playlistId?.let { addPlaylistId ->
-                        YouTube.addPlaylistToPlaylist(playlistId, addPlaylistId)
-                    }
-                }
-                songs.map { it.id }
-            },
+            onPreAdd = { songs.map { it.id } },
             onDismiss = {
                 showChoosePlaylistDialog = false
             }

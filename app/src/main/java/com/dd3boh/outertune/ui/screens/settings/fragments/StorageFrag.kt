@@ -23,7 +23,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Close
-import androidx.compose.material.icons.rounded.Downloading
 import androidx.compose.material.icons.rounded.FolderCopy
 import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Sync
@@ -52,7 +51,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
 import com.dd3boh.outertune.LocalDownloadUtil
@@ -139,16 +137,12 @@ fun ColumnScope.BackupAndRestoreFrag(viewModel: BackupRestoreViewModel) {
 fun ColumnScope.DownloadsFrag() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    val downloadCache = LocalPlayerConnection.current?.service?.downloadCache ?: return
     val downloadUtil = LocalDownloadUtil.current
 
     val (downloadPath, onDownloadPathChange) = rememberPreference(DownloadPathKey, "")
     val (scanPaths, onScanPathsChange) = rememberPreference(ScanPathsKey, defaultValue = "")
 
     // size stats
-    var downloadCacheSize by remember {
-        mutableLongStateOf(tryOrNull { downloadCache.cacheSpace } ?: 0)
-    }
     var downloadMainPathSize by remember {
         mutableLongStateOf(-2L)
     }
@@ -170,21 +164,11 @@ fun ColumnScope.DownloadsFrag() {
     // advanced
     val (dlPathExtra, onDlPathExtraChange) = rememberPreference(DownloadExtraPathKey, "")
     val isLoading by downloadUtil.isProcessingDownloads.collectAsState()
-    var showMigrationDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
     var showImportDialog by rememberSaveable {
         mutableStateOf(false)
     }
     var showPathsDialog by rememberSaveable {
         mutableStateOf(false)
-    }
-
-    LaunchedEffect(downloadCache) {
-        while (isActive) {
-            delay(2000)
-            downloadCacheSize = tryOrNull { downloadCache.cacheSpace } ?: 0
-        }
     }
 
     PreferenceEntry(
@@ -194,12 +178,6 @@ fun ColumnScope.DownloadsFrag() {
         onClick = {
             showDlPathDialog = true
         },
-    )
-
-    Text(
-        text = stringResource(R.string.dl_size_used_cache, formatFileSize(downloadCacheSize)),
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
     )
 
     if (downloadMainPathSize == -2L && downloadExtraPathSize == -2L) {
@@ -219,7 +197,6 @@ fun ColumnScope.DownloadsFrag() {
             },
             onClick = {
                 downloadMainPathSize = -1
-                downloadCacheSize = -1
                 coroutineScope.launch(Dispatchers.IO) {
                     downloadMainPathSize = downloadUtil.localMgr.getMainDlStorageUsage()
                     downloadExtraPathSize = downloadUtil.localMgr.getExtraDlStorageUsage()
@@ -305,25 +282,6 @@ fun ColumnScope.DownloadsFrag() {
             isEnabled = !isLoading && !(downloadPath.isEmpty() && dlPathExtra.isEmpty())
         )
 
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.dl_migrate_title)) },
-            description = stringResource(R.string.dl_migrate_description),
-            icon = {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(28.dp),
-                        color = MaterialTheme.colorScheme.secondary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    )
-                } else {
-                    Icon(Icons.Rounded.Downloading, null)
-                }
-            },
-            onClick = {
-                showMigrationDialog = true
-            },
-            isEnabled = !isLoading && !downloadPath.isEmpty()
-        )
     }
 
 
@@ -469,18 +427,7 @@ fun ColumnScope.DownloadsFrag() {
                     onClick = {
                         showClearConfirmDialog = false
                         coroutineScope.launch(Dispatchers.IO) {
-                            // clear internal downloads
-                            downloadCache.keys.forEach { key ->
-                                downloadCache.removeResource(key)
-                            }
-
-                            // TODO: Delete external downloads. Rememebr to exclude extra paths
-                            // clear external downloads
-//                            database.downloadSongs(SongSortType.NAME, true).collect { songs ->
-//                                songs.forEach { song ->
-//                                    downloadUtil.delete(song)
-//                                }
-//                            }
+                            downloadUtil.clearDownloads()
 
                             downloadMainPathSize = downloadUtil.localMgr.getMainDlStorageUsage()
                             downloadExtraPathSize = downloadUtil.localMgr.getExtraDlStorageUsage()
@@ -664,43 +611,6 @@ fun ColumnScope.DownloadsFrag() {
                         showImportDialog = false
                         coroutineScope.launch(dlCoroutine) {
                             downloadUtil.scanDownloads()
-                        }
-                    }
-                ) {
-                    Text(text = stringResource(android.R.string.ok))
-                }
-            }
-        )
-    }
-
-    if (showMigrationDialog) {
-        DefaultDialog(
-            onDismiss = { showMigrationDialog = false },
-            content = {
-                Text(
-                    text = stringResource(
-                        R.string.dl_migrate_confirm,
-                        absoluteFilePathFromUri(context, downloadPath.toUri()) ?: downloadPath
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(horizontal = 18.dp)
-                )
-            },
-            buttons = {
-                TextButton(
-                    onClick = {
-                        showMigrationDialog = false
-                    }
-                ) {
-                    Text(text = stringResource(android.R.string.cancel))
-                }
-
-                TextButton(
-                    onClick = {
-                        showMigrationDialog = false
-
-                        coroutineScope.launch(dlCoroutine) {
-                            downloadUtil.migrateDownloads()
                         }
                     }
                 ) {

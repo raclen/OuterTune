@@ -285,7 +285,7 @@ fun ColumnScope.LocalScannerFrag() {
             }
         ) {
             Text(
-                text = if ((scannerState > 0 && scannerState < 4) || scannerState == 5) {
+                text = if (scannerState > 0 && scannerState < 4) {
                     stringResource(R.string.action_cancel)
                 } else if (scannerFailure) {
                     stringResource(R.string.scanner_scan_fail)
@@ -322,7 +322,6 @@ fun ColumnScope.LocalScannerFrag() {
                 text = when (scannerState) {
                     1 -> stringResource(R.string.scanner_progress_discovering)
                     3 -> stringResource(R.string.scanner_progress_syncing)
-                    5 -> stringResource(R.string.scanner_ytm_link_start)
                     else -> stringResource(R.string.scanner_progress_processing)
                 },
                 color = MaterialTheme.colorScheme.secondary,

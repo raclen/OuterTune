@@ -29,9 +29,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -113,10 +110,7 @@ fun LibrarySongsScreen(
 
     val songs by viewModel.allSongs.collectAsState()
     val isPlaying by playerConnection.isPlaying.collectAsState()
-    val isSyncingRemoteLikedSongs by viewModel.isSyncingRemoteLikedSongs.collectAsState()
-    val isSyncingRemoteSongs by viewModel.isSyncingRemoteSongs.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
-    val pullRefreshState = rememberPullToRefreshState()
 
     val lazyListState = rememberLazyListState()
 
@@ -144,14 +138,6 @@ fun LibrarySongsScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        when (filter) {
-            SongFilter.LIKED -> viewModel.syncLikedSongs()
-            SongFilter.LIBRARY -> viewModel.syncLibrarySongs()
-            else -> return@LaunchedEffect
-        }
-    }
-
     val filterContent = @Composable {
         ChipsRow(
             chips = listOf(
@@ -162,11 +148,6 @@ fun LibrarySongsScreen(
             currentValue = filter,
             onValueUpdate = {
                 filter = it
-                if (it == SongFilter.LIKED) viewModel.syncLikedSongs()
-                else if (it == SongFilter.LIBRARY) viewModel.syncLibrarySongs()
-            },
-            isLoading = { filter ->
-                (filter == SongFilter.LIKED && isSyncingRemoteLikedSongs) || (filter == SongFilter.LIBRARY && isSyncingRemoteSongs)
             }
         )
     }
@@ -265,18 +246,7 @@ fun LibrarySongsScreen(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .pullToRefresh(
-                state = pullRefreshState,
-                isRefreshing = isSyncingRemoteLikedSongs || isSyncingRemoteSongs,
-                onRefresh = {
-                    when (filter) {
-                        SongFilter.LIKED -> viewModel.syncLikedSongs(true)
-                        SongFilter.LIBRARY -> viewModel.syncLibrarySongs(true)
-                        else -> return@pullToRefresh
-                    }
-                }
-            ),
+            .fillMaxSize(),
     ) {
         ScrollToTopManager(navController, lazyListState)
         LazyColumn(
@@ -379,13 +349,6 @@ fun LibrarySongsScreen(
             state = lazyListState,
         )
 
-        Indicator(
-            isRefreshing = isSyncingRemoteLikedSongs || isSyncingRemoteSongs,
-            state = pullRefreshState,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(LocalPlayerAwareWindowInsets.current.asPaddingValues()),
-        )
         FloatingFooter(visible = inSelectMode && songs != null) {
             val s: List<Song> = (songs as Iterable<Song>).toList()
             SelectHeader(

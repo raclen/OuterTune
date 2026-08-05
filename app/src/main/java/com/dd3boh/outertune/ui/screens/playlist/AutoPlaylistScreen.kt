@@ -44,9 +44,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,7 +79,6 @@ import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastSumBy
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.exoplayer.offline.Download
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
@@ -90,7 +86,6 @@ import com.dd3boh.outertune.LocalMenuState
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.LocalSnackbarHostState
-import com.dd3boh.outertune.LocalSyncUtils
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.AlbumThumbnailSize
 import com.dd3boh.outertune.constants.CONTENT_TYPE_HEADER
@@ -105,7 +100,6 @@ import com.dd3boh.outertune.db.entities.PlaylistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AutoResizeText
 import com.dd3boh.outertune.ui.component.EmptyPlaceholder
@@ -123,13 +117,11 @@ import com.dd3boh.outertune.utils.getDownloadState
 import com.dd3boh.outertune.utils.makeTimeString
 import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
-import com.dd3boh.outertune.utils.syncCoroutine
 import com.dd3boh.outertune.viewmodels.AutoPlaylistViewModel
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 enum class PlaylistType {
@@ -148,7 +140,6 @@ fun AutoPlaylistScreen(
     val density = LocalDensity.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
-    val syncUtils = LocalSyncUtils.current
     val playerConnection = LocalPlayerConnection.current ?: return
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
@@ -230,9 +221,6 @@ fun AutoPlaylistScreen(
         },
     )
 
-    val isSyncingRemoteLikedSongs by syncUtils.isSyncingRemoteLikedSongs.collectAsState()
-    val pullRefreshState = rememberPullToRefreshState()
-
     val thumbnail by viewModel.thumbnail.collectAsState()
     val mutableSongs = remember { mutableStateListOf<Song>() }
 
@@ -260,12 +248,6 @@ fun AutoPlaylistScreen(
         if (songs.isEmpty()) return@LaunchedEffect
         downloadUtil.downloads.collect { downloads ->
             downloadState = getDownloadState(songs.map { downloads[it.id] })
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        withContext(syncCoroutine) {
-            if (playlistType == PlaylistType.LIKE) syncUtils.syncRemoteLikedSongs()
         }
     }
 
@@ -298,12 +280,7 @@ fun AutoPlaylistScreen(
                         }
 
                         songs.forEach { song ->
-                            DownloadService.sendRemoveDownload(
-                                context,
-                                ExoDownloadService::class.java,
-                                song.song.id,
-                                false
-                            )
+                            downloadUtil.delete(song.song.id)
                         }
                     }
                 ) {
@@ -321,16 +298,7 @@ fun AutoPlaylistScreen(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .pullToRefresh(
-                state = pullRefreshState,
-                isRefreshing = isSyncingRemoteLikedSongs,
-                onRefresh = {
-                    coroutineScope.launch {
-                        syncUtils.syncRemoteLikedSongs(true)
-                    }
-                }
-            ),
+            .fillMaxSize(),
     ) {
         ScrollToTopManager(navController, lazyListState)
         LazyColumn(
@@ -377,14 +345,6 @@ fun AutoPlaylistScreen(
                             )
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (playlistType == PlaylistType.LIKE && isSyncingRemoteLikedSongs) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                }
-
                                 if (playlistType == PlaylistType.LIKE && downloadCount > 0) {
                                     Icon(
                                         imageVector = Icons.Rounded.OfflinePin,
@@ -431,12 +391,7 @@ fun AutoPlaylistScreen(
                                             IconButton(
                                                 onClick = {
                                                     songs.forEach { song ->
-                                                        DownloadService.sendRemoveDownload(
-                                                            context,
-                                                            ExoDownloadService::class.java,
-                                                            song.song.id,
-                                                            false
-                                                        )
+                                                        downloadUtil.delete(song.song.id)
                                                     }
                                                 }
                                             ) {
@@ -673,13 +628,6 @@ fun AutoPlaylistScreen(
             scrollBehavior = scrollBehavior
         )
 
-        Indicator(
-            isRefreshing = isSyncingRemoteLikedSongs,
-            state = pullRefreshState,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(LocalPlayerAwareWindowInsets.current.asPaddingValues()),
-        )
         FloatingFooter(inSelectMode) {
             SelectHeader(
                 navController = navController,

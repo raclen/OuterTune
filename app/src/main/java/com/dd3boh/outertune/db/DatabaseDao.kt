@@ -37,12 +37,6 @@ import com.dd3boh.outertune.extensions.toSQLiteQuery
 import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.MultiQueueObject
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.zionhuang.innertube.models.AlbumItem
-import com.zionhuang.innertube.models.ArtistItem
-import com.zionhuang.innertube.models.PlaylistItem
-import com.zionhuang.innertube.models.SongItem
-import com.zionhuang.innertube.models.YTItem
-import com.zionhuang.innertube.pages.AlbumPage
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -224,87 +218,6 @@ interface DatabaseDao : SongsDao, AlbumsDao, ArtistsDao, PlaylistsDao, QueueDao 
         }
     }
 
-    @Transaction
-    fun insert(albumPage: AlbumPage) {
-        if (insert(AlbumEntity(
-                id = albumPage.album.browseId,
-                playlistId = albumPage.album.playlistId,
-                title = albumPage.album.title,
-                year = albumPage.album.year,
-                thumbnailUrl = albumPage.album.thumbnail,
-                songCount = albumPage.songs.size,
-                duration = albumPage.songs.sumOf { it.duration ?: 0 }
-            )) == -1L
-        ) return
-        albumPage.songs.map(SongItem::toMediaMetadata)
-            .onEach(::insert)
-            .mapIndexed { index, song ->
-                SongAlbumMap(
-                    songId = song.id,
-                    albumId = albumPage.album.browseId,
-                    index = index
-                )
-            }
-            .forEach(::upsert)
-        albumPage.album.artists
-            ?.map { artist ->
-                ArtistEntity(
-                    id = artist.id ?: artistByName(artist.name)?.id ?: ArtistEntity.generateArtistId(),
-                    name = artist.name
-                )
-            }
-            ?.onEach(::insert)
-            ?.mapIndexed { index, artist ->
-                AlbumArtistMap(
-                    albumId = albumPage.album.browseId,
-                    artistId = artist.id,
-                    order = index
-                )
-            }
-            ?.forEach(::insert)
-    }
-
-    @Transaction
-    fun update(album: AlbumEntity, albumPage: AlbumPage) {
-        update(
-            album.copy(
-                id = albumPage.album.browseId,
-                playlistId = albumPage.album.playlistId,
-                title = albumPage.album.title,
-                year = albumPage.album.year,
-                thumbnailUrl = albumPage.album.thumbnail,
-                songCount = albumPage.songs.size,
-                duration = albumPage.songs.sumOf { it.duration ?: 0 }
-            )
-        )
-        albumPage.songs.map(SongItem::toMediaMetadata)
-            .onEach(::insert)
-            .mapIndexed { index, song ->
-                SongAlbumMap(
-                    songId = song.id,
-                    albumId = albumPage.album.browseId,
-                    index = index
-                )
-            }
-            .forEach(::upsert)
-        albumPage.album.artists
-            ?.map { artist ->
-                ArtistEntity(
-                    id = artist.id ?: artistByName(artist.name)?.id ?: ArtistEntity.generateArtistId(),
-                    name = artist.name
-                )
-            }
-            ?.onEach(::insert)
-            ?.mapIndexed { index, artist ->
-                AlbumArtistMap(
-                    albumId = albumPage.album.browseId,
-                    artistId = artist.id,
-                    order = index
-                )
-            }
-            ?.forEach(::insert)
-    }
-
     @Upsert
     fun upsert(lyrics: LyricsEntity)
 
@@ -373,63 +286,6 @@ interface DatabaseDao : SongsDao, AlbumsDao, ArtistsDao, PlaylistsDao, QueueDao 
     @Query("DELETE FROM recent_activity")
     fun clearRecentActivity()
 
-    @Transaction
-    fun insertRecentActivityItem(item: YTItem) {
-        when (item) {
-            is AlbumItem -> {
-                insert(
-                    RecentActivityEntity(
-                        id = item.browseId,
-                        title = item.title,
-                        thumbnail = item.thumbnail,
-                        explicit = item.explicit,
-                        shareLink = item.shareLink,
-                        type = RecentActivityType.ALBUM,
-                        playlistId = item.playlistId,
-                        radioPlaylistId = null,
-                        shufflePlaylistId = null
-                    )
-                )
-            }
-
-            is PlaylistItem -> {
-                insert(
-                    RecentActivityEntity(
-                        id = item.id,
-                        title = item.title,
-                        thumbnail = item.thumbnail,
-                        explicit = item.explicit,
-                        shareLink = item.shareLink,
-                        type = RecentActivityType.PLAYLIST,
-                        playlistId = item.id,
-                        radioPlaylistId = item.radioEndpoint?.playlistId,
-                        shufflePlaylistId = item.shuffleEndpoint?.playlistId
-                    )
-                )
-            }
-
-            is ArtistItem -> {
-                insert(
-                    RecentActivityEntity(
-                        id = item.id,
-                        title = item.title,
-                        thumbnail = item.thumbnail,
-                        explicit = item.explicit,
-                        shareLink = item.shareLink,
-                        type = RecentActivityType.ARTIST,
-                        playlistId = item.playEndpoint?.playlistId,
-                        radioPlaylistId = item.radioEndpoint?.playlistId,
-                        shufflePlaylistId = item.shuffleEndpoint?.playlistId
-                    )
-                )
-            }
-
-            else -> {
-                // do nothing
-            }
-        }
-    }
-
     @Query("SELECT * FROM recent_activity ORDER BY date DESC")
     fun recentActivity(): Flow<List<RecentActivityEntity>>
 
@@ -458,10 +314,6 @@ AND NOT EXISTS (
     @Transaction
     @Query("DELETE FROM lyrics WHERE lyrics.id NOT IN (SELECT song.id FROM song)")
     fun nukeDanglingLyrics()
-
-    @Transaction
-    @Query("DELETE FROM playlist WHERE isLocal = 0")
-    fun nukeRemotePlaylists()
 
     @Transaction
     fun nukeLocalData() {

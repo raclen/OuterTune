@@ -35,9 +35,6 @@ import com.dd3boh.outertune.ui.menu.AlbumMenu
 import com.dd3boh.outertune.ui.menu.ArtistMenu
 import com.dd3boh.outertune.ui.menu.MenuState
 import com.dd3boh.outertune.ui.menu.PlaylistMenu
-import com.dd3boh.outertune.ui.menu.YouTubePlaylistMenu
-import com.zionhuang.innertube.models.PlaylistItem
-import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.CoroutineScope
 
 @Composable
@@ -192,42 +189,12 @@ fun LibraryPlaylistListItem(
         IconButton(
             onClick = {
                 menuState.show {
-                    // TODO: investigate why song count is needed. Remove if not needed
-                    if (playlist.playlist.isEditable || playlist.playlist.isLocal || playlist.playlist.browseId == null || playlist.songCount != 0) {
-                        PlaylistMenu(
-                            navController = navController,
-                            playlist = playlist,
-                            coroutineScope = coroutineScope,
-                            onDismiss = menuState::dismiss
-                        )
-                    } else {
-                        val browseId = playlist.playlist.browseId
-                        YouTubePlaylistMenu(
-                            navController = navController,
-                            playlist = PlaylistItem(
-                                id = browseId,
-                                title = playlist.playlist.name,
-                                author = null,
-                                songCountText = null,
-                                thumbnail = null,
-                                playEndpoint = WatchEndpoint(
-                                    playlistId = browseId,
-                                    params = playlist.playlist.playEndpointParams
-                                ),
-                                shuffleEndpoint = WatchEndpoint(
-                                    playlistId = browseId,
-                                    params = playlist.playlist.shuffleEndpointParams
-                                ),
-                                radioEndpoint = WatchEndpoint(
-                                    playlistId = "RDAMPL$browseId",
-                                    params = playlist.playlist.radioEndpointParams
-                                ),
-                                isEditable = false
-                            ),
-                            coroutineScope = coroutineScope,
-                            onDismiss = menuState::dismiss
-                        )
-                    }
+                    PlaylistMenu(
+                        navController = navController,
+                        playlist = playlist,
+                        coroutineScope = coroutineScope,
+                        onDismiss = menuState::dismiss
+                    )
                 }
                 haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
             }
@@ -241,11 +208,7 @@ fun LibraryPlaylistListItem(
     modifier = modifier
         .fillMaxWidth()
         .clickable {
-            if (playlist.playlist.isEditable || playlist.playlist.isLocal || playlist.playlist.browseId == null || playlist.songCount != 0) {
-                navController.navigate("local_playlist/${playlist.id}")
-            } else {
-                navController.navigate("online_playlist/${playlist.playlist.browseId}")
-            }
+            navController.navigate("local_playlist/${playlist.id}")
         }
 )
 
@@ -264,50 +227,16 @@ fun LibraryPlaylistGridItem(
         .fillMaxWidth()
         .combinedClickable(
             onClick = {
-                if (playlist.playlist.isEditable || playlist.playlist.isLocal || playlist.playlist.browseId == null || playlist.songCount != 0) {
-                    navController.navigate("local_playlist/${playlist.id}")
-                } else {
-                    navController.navigate("online_playlist/${playlist.playlist.browseId}")
-                }
+                navController.navigate("local_playlist/${playlist.id}")
             },
             onLongClick = {
                 menuState.show {
-                    if (playlist.playlist.isEditable || playlist.songCount != 0) {
-                        PlaylistMenu(
-                            navController = navController,
-                            playlist = playlist,
-                            coroutineScope = coroutineScope,
-                            onDismiss = menuState::dismiss
-                        )
-                    } else {
-                        playlist.playlist.browseId?.let { browseId ->
-                            YouTubePlaylistMenu(
-                                navController = navController,
-                                playlist = PlaylistItem(
-                                    id = browseId,
-                                    title = playlist.playlist.name,
-                                    author = null,
-                                    songCountText = null,
-                                    thumbnail = null,
-                                    playEndpoint = WatchEndpoint(
-                                        playlistId = browseId,
-                                        params = playlist.playlist.playEndpointParams
-                                    ),
-                                    shuffleEndpoint = WatchEndpoint(
-                                        playlistId = browseId,
-                                        params = playlist.playlist.shuffleEndpointParams
-                                    ),
-                                    radioEndpoint = WatchEndpoint(
-                                        playlistId = "RDAMPL$browseId",
-                                        params = playlist.playlist.radioEndpointParams
-                                    ),
-                                    isEditable = false
-                                ),
-                                coroutineScope = coroutineScope,
-                                onDismiss = menuState::dismiss
-                            )
-                        }
-                    }
+                    PlaylistMenu(
+                        navController = navController,
+                        playlist = playlist,
+                        coroutineScope = coroutineScope,
+                        onDismiss = menuState::dismiss
+                    )
                 }
             }
         )

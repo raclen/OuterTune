@@ -23,7 +23,7 @@
     <string name="most_played_artists">最常播放的音乐人</string>
     <string name="most_played_albums">最常播放的专辑</string>
     <string name="search">搜索</string>
-    <string name="search_yt_music">搜索 YouTube Music…</string>
+    <string name="search_online_music">搜索在线音乐…</string>
     <string name="search_library">搜索媒体库…</string>
     <string name="filter_library">媒体库</string>
     <string name="filter_liked">喜欢</string>
@@ -125,7 +125,6 @@
     </plurals>
     <string name="playlist_imported">播放列表已导入</string>
     <string name="removed_song_from_playlist">已从播放列表中移除“%s”</string>
-    <string name="playlist_synced">播放列表已同步</string>
     <string name="undo">撤销</string>
     <string name="lyrics_not_found">未找到歌词</string>
     <string name="sleep_timer">睡眠定时器</string>
@@ -213,7 +212,6 @@
     <string name="clear_translation_models">清除翻译模型</string>
     <string name="delete_playlist_confirm">是否确定要删除播放列表“%s”？</string>
     <string name="remove_download_playlist_confirm">是否确定要从已下载的歌曲存储中移除所有“%s”播放列表歌曲？</string>
-    <string name="your_youtube_playlists">您的 YouTube 播放列表</string>
     <string name="other_versions">其他版本</string>
     <string name="library_artist_empty">媒体库音乐人将显示在此处</string>
     <string name="library_album_empty">媒体库专辑将显示在此处</string>

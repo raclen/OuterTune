@@ -18,8 +18,6 @@ import com.dd3boh.outertune.db.entities.ArtistEntity
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.db.entities.SongArtistMap
 import com.dd3boh.outertune.extensions.reversed
-import com.dd3boh.outertune.ui.utils.resize
-import com.zionhuang.innertube.pages.ArtistPage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import java.time.LocalDateTime
@@ -95,6 +93,15 @@ interface ArtistsDao {
     """)
     fun searchArtistSongs(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Song>>
 
+    @Transaction
+    @Query("""
+        SELECT song.*
+        FROM song_artist_map JOIN song ON song_artist_map.songId = song.id
+        WHERE song_artist_map.artistId IN (SELECT id FROM artist WHERE name LIKE '%' || :query || '%') AND song.isLocal = 1
+        LIMIT :previewSize
+    """)
+    fun searchLocalArtistSongs(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<Song>>
+
     @Query("SELECT * FROM artist WHERE name LIKE '%' || :query || '%' LIMIT :previewSize")
     fun artistsByNameFuzzy(query: String, previewSize: Int = Int.MAX_VALUE): Flow<List<ArtistEntity>>
 
@@ -168,11 +175,7 @@ interface ArtistsDao {
             ORDER BY $orderBy
         """)
 
-        return _getArtists(query).map { artists ->
-            artists
-                .filter { it.artist.isYouTubeArtist || it.artist.isLocal } // TODO: add ui to filter by local or remote or something idk
-                .reversed(descending)
-        }
+        return _getArtists(query).map { artists -> artists.reversed(descending) }
     }
 
     fun artistsInLibraryAsc() = artists(ArtistFilter.LIBRARY, ArtistSortType.CREATE_DATE, false)
@@ -223,17 +226,6 @@ interface ArtistsDao {
     // region Updates
     @Update
     fun update(artist: ArtistEntity)
-
-    @Transaction
-    fun update(artist: ArtistEntity, artistPage: ArtistPage) {
-        update(
-            artist.copy(
-                name = artistPage.artist.title,
-                thumbnailUrl = artistPage.artist.thumbnail?.resize(544, 544),
-                lastUpdateTime = LocalDateTime.now()
-            )
-        )
-    }
 
     @Transaction
     @Query("UPDATE song_artist_map SET artistId = :newId WHERE artistId = :oldId")

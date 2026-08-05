@@ -28,10 +28,6 @@ val SlimNavBarKey = booleanPreferencesKey("slimNavBar")
  * Content
  */
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
-val YtmSyncKey = booleanPreferencesKey("ytmSync")
-val YtmSyncContentKey = stringPreferencesKey("ytmSyncContent")
-val YtmSyncModeKey = stringPreferencesKey("ytmSyncMode")
-val YtmSyncConflictKey = stringPreferencesKey("ytmSyncConflict")
 //val LikedAutoDownloadKey = stringPreferencesKey("likedAutoDownloadKey")
 val ContentLanguageKey = stringPreferencesKey("contentLanguage")
 val ContentCountryKey = stringPreferencesKey("contentCountry")
@@ -45,6 +41,7 @@ val ProxyTypeKey = stringPreferencesKey("proxyType")
 val LxSourceScriptKey = stringPreferencesKey("lxSourceScript")
 val LxSourceNameKey = stringPreferencesKey("lxSourceName")
 val LxSourceQualityKey = stringPreferencesKey("lxSourceQuality")
+val DownloadQualityKey = stringPreferencesKey("downloadQuality")
 
 // sync time tracks
 val LastFullSyncKey = longPreferencesKey("lastFullSync")
@@ -129,7 +126,6 @@ val ScannerSensitivityKey = stringPreferencesKey("scannerSensitivity")
 val ScannerImplKey = stringPreferencesKey("scannerImpl")
 val ScannerStrictFilePathsKey = booleanPreferencesKey("scannerStrictFilePaths")
 val ScannerStrictExtKey = booleanPreferencesKey("scannerStrictExt")
-//val LookupYtmArtistsKey = booleanPreferencesKey("lookupYtmArtists") // removed key
 
 val ScanPathsKey = stringPreferencesKey("inclScanPaths") // previously "scanPaths"
 val ExcludedScanPathsKey = stringPreferencesKey("exclScanPaths") // previously "excludedScanPaths"
@@ -180,7 +176,6 @@ val SearchSourceKey = stringPreferencesKey("searchSource")
 
 val VisitorDataKey = stringPreferencesKey("visitorData")
 val DataSyncIdKey = stringPreferencesKey("dataSyncId")
-val InnerTubeCookieKey = stringPreferencesKey("innerTubeCookie")
 val AccountNameKey = stringPreferencesKey("accountName")
 val AccountEmailKey = stringPreferencesKey("accountEmail")
 val AccountChannelHandleKey = stringPreferencesKey("accountChannelHandle")

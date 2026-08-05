@@ -16,6 +16,19 @@ import kotlinx.serialization.json.jsonPrimitive
 object KuwoSearchClient {
     private const val SEARCH_URL = "https://search.kuwo.cn/r.s"
     private const val COVER_URL = "https://artistpicserver.kuwo.cn/pic.web"
+    private const val SEARCH_CACHE_TTL_MS = 5 * 60 * 1000L
+    private const val SEARCH_CACHE_SIZE = 20
+    private val coverSizePrefix = Regex("""^\d+/""")
+
+    private data class SearchCacheEntry(
+        val createdAt: Long,
+        val songs: List<LxMusicInfo>,
+    )
+
+    private val searchCache = object : LinkedHashMap<String, SearchCacheEntry>(SEARCH_CACHE_SIZE, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, SearchCacheEntry>?): Boolean =
+            size > SEARCH_CACHE_SIZE
+    }
 
     private val client = HttpClient(OkHttp) {
         defaultRequest {
@@ -23,10 +36,18 @@ object KuwoSearchClient {
         }
     }
 
-    suspend fun search(query: String, page: Int = 1, limit: Int = 30): Result<List<LxMusicInfo>> = runCatching {
+    suspend fun search(query: String, page: Int = 1, limit: Int = 15): Result<List<LxMusicInfo>> = runCatching {
+        val normalizedQuery = query.trim()
+        val cacheKey = "$normalizedQuery|$page|$limit"
+        synchronized(searchCache) {
+            searchCache[cacheKey]
+                ?.takeIf { System.currentTimeMillis() - it.createdAt < SEARCH_CACHE_TTL_MS }
+                ?.songs
+        }?.let { return@runCatching it }
+
         val response = client.get(SEARCH_URL) {
             parameter("client", "kt")
-            parameter("all", query)
+            parameter("all", normalizedQuery)
             parameter("pn", (page - 1).coerceAtLeast(0))
             parameter("rn", limit)
             parameter("uid", "794762570")
@@ -46,10 +67,14 @@ object KuwoSearchClient {
         check(response.status.isSuccess()) { "酷我搜索请求失败：${response.status}" }
         val root = lxJson.parseToJsonElement(response.body<String>()) as JsonObject
         val items = root["abslist"] as? JsonArray ?: JsonArray(emptyList())
-        items.mapNotNull { (it as? JsonObject)?.toMusicInfo() }
+        items.mapNotNull { (it as? JsonObject)?.toMusicInfo() }.also { songs ->
+            synchronized(searchCache) {
+                searchCache[cacheKey] = SearchCacheEntry(System.currentTimeMillis(), songs)
+            }
+        }
     }
 
-    private suspend fun JsonObject.toMusicInfo(): LxMusicInfo? {
+    private fun JsonObject.toMusicInfo(): LxMusicInfo? {
         val songId = string("MUSICRID").removePrefix("MUSIC_").ifBlank { return null }
         val title = decode(string("SONGNAME").ifBlank { string("NAME") })
         val singer = decode(string("ARTIST"))
@@ -66,14 +91,14 @@ object KuwoSearchClient {
                 songId = songId,
                 albumName = albumName,
                 albumId = string("ALBUMID").takeIf(String::isNotBlank),
-                picUrl = loadCover(songId),
+                picUrl = directCoverUrl(),
                 qualitys = qualities,
                 _qualitys = qualities.associate { it.type to LxQualityInfo(it.size) },
             ),
         )
     }
 
-    private suspend fun loadCover(songId: String): String? = runCatching {
+    suspend fun loadCover(songId: String): String? = runCatching {
         val response = client.get(COVER_URL) {
             parameter("corp", "kuwo")
             parameter("type", "rid_pic")
@@ -83,6 +108,24 @@ object KuwoSearchClient {
         }
         response.body<String>().trim().takeIf { it.startsWith("http") }?.let(::normalizeCoverUrl)
     }.getOrNull()
+
+    private fun JsonObject.directCoverUrl(): String? {
+        val albumCoverPath = string("web_albumpic_short")
+            .replace(coverSizePrefix, "")
+            .takeIf(String::isNotBlank)
+        if (albumCoverPath != null) {
+            return "https://img1.kuwo.cn/star/albumcover/500/$albumCoverPath"
+        }
+        val mvCoverUrl = string("hts_MVPIC")
+            .takeIf(String::isNotBlank)
+            ?.let(::normalizeCoverUrl)
+        if (mvCoverUrl != null) return mvCoverUrl
+
+        return string("web_artistpic_short")
+            .replace(coverSizePrefix, "")
+            .takeIf(String::isNotBlank)
+            ?.let { "https://img1.kuwo.cn/star/starheads/500/$it" }
+    }
 
     /**
      * 部分酷我封面地址使用 kwcdn 域名，但 Android/部分网络环境无法建立 HTTPS 连接。
@@ -114,5 +157,7 @@ object KuwoSearchClient {
 
     private fun JsonObject.string(key: String) = this[key]?.jsonPrimitive?.contentOrNull.orEmpty()
 
-    private fun decode(value: String): String = Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
+    private fun decode(value: String): String =
+        if ('&' !in value && '<' !in value) value
+        else Html.fromHtml(value, Html.FROM_HTML_MODE_LEGACY).toString()
 }

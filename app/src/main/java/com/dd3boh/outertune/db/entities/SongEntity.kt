@@ -6,11 +6,6 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.dd3boh.outertune.utils.LocalArtworkPath
-import com.dd3boh.outertune.utils.syncCoroutine
-import com.zionhuang.innertube.YouTube
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 import org.apache.commons.lang3.RandomStringUtils
 import java.time.LocalDateTime
 import java.time.Month
@@ -62,14 +57,7 @@ data class SongEntity(
         liked = !liked,
         likedDate = if (!liked) LocalDateTime.now() else null,
         inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary
-    ).also {
-        if (source == null) {
-            CoroutineScope(syncCoroutine).launch {
-                YouTube.likeVideo(id, !liked)
-                this.cancel()
-            }
-        }
-    }
+    )
 
     fun toggleLibrary() = copy(
         inLibrary = if (inLibrary == null) LocalDateTime.now() else null,

@@ -74,7 +74,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.exoplayer.offline.Download
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.dd3boh.outertune.LocalDatabase
@@ -91,7 +90,6 @@ import com.dd3boh.outertune.constants.ThumbnailCornerRadius
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.db.entities.Album
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.AsyncImageLocal
 import com.dd3boh.outertune.ui.component.AutoResizeText
@@ -102,13 +100,11 @@ import com.dd3boh.outertune.ui.component.NavigationTitle
 import com.dd3boh.outertune.ui.component.SelectHeader
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.items.SongListItem
-import com.dd3boh.outertune.ui.component.items.YouTubeGridItem
 import com.dd3boh.outertune.ui.component.shimmer.ButtonPlaceholder
 import com.dd3boh.outertune.ui.component.shimmer.ListItemPlaceHolder
 import com.dd3boh.outertune.ui.component.shimmer.ShimmerHost
 import com.dd3boh.outertune.ui.component.shimmer.TextPlaceholder
 import com.dd3boh.outertune.ui.menu.AlbumMenu
-import com.dd3boh.outertune.ui.menu.YouTubeAlbumMenu
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.ui.utils.getNSongsString
 import com.dd3boh.outertune.utils.LocalArtworkPath
@@ -139,9 +135,7 @@ fun AlbumScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val albumWithSongs by viewModel.albumWithSongs.collectAsState()
-    val otherVersions by viewModel.otherVersions.collectAsState()
     val state = rememberLazyListState()
-    val isLoading by viewModel.isLoading.collectAsState()
 
     // multiselect
     var inSelectMode by rememberSaveable { mutableStateOf(false) }
@@ -289,12 +283,7 @@ fun AlbumScreen(
                                             IconButton(
                                                 onClick = {
                                                     albumWithSongsLocal.songs.forEach { song ->
-                                                        DownloadService.sendRemoveDownload(
-                                                            context,
-                                                            ExoDownloadService::class.java,
-                                                            song.id,
-                                                            false
-                                                        )
+                                                        downloadUtil.delete(song.id)
                                                     }
                                                 }
                                             ) {
@@ -309,12 +298,7 @@ fun AlbumScreen(
                                             IconButton(
                                                 onClick = {
                                                     albumWithSongsLocal.songs.forEach { song ->
-                                                        DownloadService.sendRemoveDownload(
-                                                            context,
-                                                            ExoDownloadService::class.java,
-                                                            song.id,
-                                                            false
-                                                        )
+                                                        downloadUtil.delete(song.id)
                                                     }
                                                 }
                                             ) {
@@ -464,44 +448,7 @@ fun AlbumScreen(
                 )
             }
 
-            if (otherVersions.isNotEmpty()) {
-                item {
-                    NavigationTitle(
-                        title = stringResource(R.string.other_versions),
-                    )
-                }
-                item {
-                    LazyRow {
-                        items(
-                            items = otherVersions,
-                            key = { it.id },
-                        ) { item ->
-                            YouTubeGridItem(
-                                item = item,
-                                isActive = mediaMetadata?.album?.id == item.id,
-                                isPlaying = isPlaying,
-                                coroutineScope = scope,
-                                modifier = Modifier
-                                    .combinedClickable(
-                                        onClick = { navController.navigate("album/${item.id}") },
-                                        onLongClick = {
-                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                            menuState.show {
-                                                YouTubeAlbumMenu(
-                                                    albumItem = item,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss,
-                                                )
-                                            }
-                                        },
-                                    )
-                                    .animateItem(),
-                            )
-                        }
-                    }
-                }
-            }
-        } else if (isLoading) {
+        } else {
             item {
                 ShimmerHost {
                     Column(Modifier.padding(12.dp)) {

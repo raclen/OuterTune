@@ -14,6 +14,7 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
@@ -29,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.palette.graphics.Palette
 import coil3.imageLoader
 import coil3.request.ImageRequest
@@ -47,6 +50,28 @@ import kotlinx.coroutines.launch
 
 // TODO: support for custom accent
 val DefaultThemeColor = Color(0xFFED5564)
+
+private fun TextStyle.withSystemFont() = copy(fontFamily = FontFamily.SansSerif)
+
+private val SystemTypography = Typography().run {
+    copy(
+        displayLarge = displayLarge.withSystemFont(),
+        displayMedium = displayMedium.withSystemFont(),
+        displaySmall = displaySmall.withSystemFont(),
+        headlineLarge = headlineLarge.withSystemFont(),
+        headlineMedium = headlineMedium.withSystemFont(),
+        headlineSmall = headlineSmall.withSystemFont(),
+        titleLarge = titleLarge.withSystemFont(),
+        titleMedium = titleMedium.withSystemFont(),
+        titleSmall = titleSmall.withSystemFont(),
+        bodyLarge = bodyLarge.withSystemFont(),
+        bodyMedium = bodyMedium.withSystemFont(),
+        bodySmall = bodySmall.withSystemFont(),
+        labelLarge = labelLarge.withSystemFont(),
+        labelMedium = labelMedium.withSystemFont(),
+        labelSmall = labelSmall.withSystemFont(),
+    )
+}
 
 @Composable
 fun OuterTuneTheme(
@@ -128,7 +153,7 @@ fun OuterTuneTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = MaterialTheme.typography,
+        typography = SystemTypography,
         content = content
     )
 }

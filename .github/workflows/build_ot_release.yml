@@ -1,6 +1,9 @@
 name: Build APKs for release
 on:
   workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build:
@@ -47,9 +50,10 @@ jobs:
       - name: Create github release draft
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: build-${{ env.date_tag }}
-          name: "Build ${{ env.date_tag }}"
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', env.date_tag) }}
+          name: "OuterTune ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', env.date_tag) }}"
           draft: true
+          body_path: CHANGELOG.md
           files: |
             app/build/outputs/apk/core/release/*.apk
             app/build/outputs/apk/full/release/*.apk

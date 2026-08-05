@@ -6,11 +6,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import okhttp3.Call
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.IOException
 import java.io.InputStream
+import java.util.concurrent.ConcurrentHashMap
 
 
 sealed class DownloadEvent {
@@ -26,8 +29,16 @@ class DownloadManagerOt(
 ) {
     private val _events = MutableSharedFlow<DownloadEvent>(extraBufferCapacity = 100)
     val events = _events.asSharedFlow()
+    private val jobs = ConcurrentHashMap<String, Job>()
+    private val calls = ConcurrentHashMap<String, Call>()
 
-    fun enqueue(mediaId: String, url: String, displayName: String? = null, abort: Boolean = false) {
+    fun enqueue(
+        mediaId: String,
+        url: String,
+        displayName: String? = null,
+        abort: Boolean = false,
+        fileExtension: String = ".mka",
+    ) {
 
         // if already exists, immediately emit success
         local.getFilePathIfExists(mediaId)?.let {
@@ -40,10 +51,13 @@ class DownloadManagerOt(
             return
         }
 
-        scope.launch {
+        jobs.remove(mediaId)?.cancel()
+        jobs[mediaId] = scope.launch {
             val request = Request.Builder().url(url).build()
             try {
-                httpClient.newCall(request).execute().use { resp ->
+                val call = httpClient.newCall(request)
+                calls[mediaId] = call
+                call.execute().use { resp ->
                     if (!resp.isSuccessful) {
                         throw IllegalStateException("HTTP ${resp.code}")
                     }
@@ -79,7 +93,12 @@ class DownloadManagerOt(
 
 
                     // save to disk
-                    val saved = local.saveFile(mediaId, countingStream, displayName = displayName)
+                    val saved = local.saveFile(
+                        mediaId,
+                        countingStream,
+                        displayName = displayName,
+                        fileExtension = fileExtension,
+                    )
                     if (saved != null) {
                         _events.tryEmit(DownloadEvent.Success(mediaId, saved))
                     } else {
@@ -89,11 +108,19 @@ class DownloadManagerOt(
             } catch (e: Throwable) {
                 reportException(e)
                 _events.tryEmit(DownloadEvent.Failure(mediaId, e))
+            } finally {
+                calls.remove(mediaId)
+                jobs.remove(mediaId)
             }
         }
     }
 
-    fun enqueue(mediaId: String, data: ByteArray, displayName: String? = null) {
+    fun enqueue(
+        mediaId: String,
+        data: ByteArray,
+        displayName: String? = null,
+        fileExtension: String = ".mka",
+    ) {
         // if already exists, immediately emit success
         local.getFilePathIfExists(mediaId)?.let {
             _events.tryEmit(DownloadEvent.Success(mediaId, it))
@@ -131,7 +158,12 @@ class DownloadManagerOt(
             }
 
             // save to disk
-            val saved = local.saveFile(mediaId, countingStream, displayName = displayName)
+            val saved = local.saveFile(
+                mediaId,
+                countingStream,
+                displayName = displayName,
+                fileExtension = fileExtension,
+            )
             if (saved != null) {
                 _events.tryEmit(DownloadEvent.Success(mediaId, saved))
             } else {
@@ -144,6 +176,15 @@ class DownloadManagerOt(
 
     fun enqueueAll(pairs: List<Pair<String, String>>) {
         pairs.forEach { (id, url) -> enqueue(id, url) }
+    }
+
+    fun cancel(mediaId: String) {
+        calls.remove(mediaId)?.cancel()
+        jobs.remove(mediaId)?.cancel()
+    }
+
+    fun cancelAll() {
+        (calls.keys + jobs.keys).forEach(::cancel)
     }
 
     fun getFilePath(mediaId: String): Uri? = local.getFilePathIfExists(mediaId)

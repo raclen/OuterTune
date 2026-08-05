@@ -13,6 +13,9 @@ data class LxMusicInfo(
     val source: String,
     val interval: String? = null,
     val meta: LxMusicMeta,
+    val hash: String? = null,
+    val mid: String? = null,
+    val musicId: String? = null,
 )
 
 @Serializable

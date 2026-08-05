@@ -19,8 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.PlaylistAdd
 import androidx.compose.material.icons.rounded.DragHandle
-import androidx.compose.material.icons.rounded.Language
-import androidx.compose.material.icons.rounded.LocationOn
 import androidx.compose.material.icons.rounded.Reorder
 import androidx.compose.material.icons.rounded.Swipe
 import androidx.compose.material.icons.rounded.Tab
@@ -41,17 +39,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.constants.ContentCountryKey
-import com.dd3boh.outertune.constants.ContentLanguageKey
-import com.dd3boh.outertune.constants.CountryCodeToName
 import com.dd3boh.outertune.constants.DEFAULT_ENABLED_FILTERS
 import com.dd3boh.outertune.constants.DEFAULT_ENABLED_TABS
 import com.dd3boh.outertune.constants.DefaultOpenTabKey
 import com.dd3boh.outertune.constants.EnabledFiltersKey
 import com.dd3boh.outertune.constants.EnabledTabsKey
-import com.dd3boh.outertune.constants.LanguageCodeToName
 import com.dd3boh.outertune.constants.ListItemHeight
-import com.dd3boh.outertune.constants.SYSTEM_DEFAULT
 import com.dd3boh.outertune.constants.SwipeToQueueKey
 import com.dd3boh.outertune.constants.SwipeToSkipKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
@@ -64,10 +57,8 @@ import com.dd3boh.outertune.ui.dialog.InfoLabel
 import com.dd3boh.outertune.ui.screens.Screens
 import com.dd3boh.outertune.ui.screens.Screens.LibraryFilter
 import com.dd3boh.outertune.utils.rememberPreference
-import com.zionhuang.innertube.YouTube
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import java.util.Locale
 
 @Composable
 fun ColumnScope.TabArrangementFrag() {
@@ -414,56 +405,5 @@ fun ColumnScope.SwipeGesturesFrag() {
 
 @Composable
 fun ColumnScope.LocalizationFrag() {
-    val (contentLanguage, onContentLanguageChange) = rememberPreference(
-        key = ContentLanguageKey,
-        defaultValue = "system"
-    )
-    val (contentCountry, onContentCountryChange) = rememberPreference(key = ContentCountryKey, defaultValue = "system")
-
-    ListPreference(
-        title = { Text(stringResource(R.string.content_language)) },
-        icon = { Icon(Icons.Rounded.Language, null) },
-        selectedValue = contentLanguage,
-        values = listOf(SYSTEM_DEFAULT) + LanguageCodeToName.keys.toList(),
-        valueText = {
-            LanguageCodeToName.getOrElse(it) {
-                stringResource(R.string.system_default)
-            }
-        },
-        onValueSelected = { newValue ->
-            val locale = Locale.getDefault()
-            val languageTag = locale.toLanguageTag().replace("-Hant", "")
-
-            YouTube.locale = YouTube.locale.copy(
-                hl = newValue.takeIf { it != SYSTEM_DEFAULT }
-                    ?: locale.language.takeIf { it in LanguageCodeToName }
-                    ?: languageTag.takeIf { it in LanguageCodeToName }
-                    ?: "en"
-            )
-
-            onContentLanguageChange(newValue)
-        }
-    )
-    ListPreference(
-        title = { Text(stringResource(R.string.content_country)) },
-        icon = { Icon(Icons.Rounded.LocationOn, null) },
-        selectedValue = contentCountry,
-        values = listOf(SYSTEM_DEFAULT) + CountryCodeToName.keys.toList(),
-        valueText = {
-            CountryCodeToName.getOrElse(it) {
-                stringResource(R.string.system_default)
-            }
-        },
-        onValueSelected = { newValue ->
-            val locale = Locale.getDefault()
-
-            YouTube.locale = YouTube.locale.copy(
-                gl = newValue.takeIf { it != SYSTEM_DEFAULT }
-                    ?: locale.country.takeIf { it in CountryCodeToName }
-                    ?: "US"
-            )
-
-            onContentCountryChange(newValue)
-        }
-    )
+    Text("界面仅使用简体中文")
 }

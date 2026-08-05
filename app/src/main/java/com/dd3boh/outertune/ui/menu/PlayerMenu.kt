@@ -80,7 +80,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastSumBy
 import androidx.compose.ui.window.DialogProperties
 import androidx.media3.common.PlaybackParameters
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
@@ -88,8 +87,6 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ShowLyricsKey
 import com.dd3boh.outertune.models.MediaMetadata
-import com.dd3boh.outertune.playback.ExoDownloadService
-import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.BigSeekBar
 import com.dd3boh.outertune.ui.component.BottomSheetState
 import com.dd3boh.outertune.ui.component.button.IconButton
@@ -98,7 +95,6 @@ import com.dd3boh.outertune.ui.dialog.AddToQueueDialog
 import com.dd3boh.outertune.ui.dialog.ArtistDialog
 import com.dd3boh.outertune.ui.dialog.DetailsDialog
 import com.dd3boh.outertune.utils.rememberPreference
-import com.zionhuang.innertube.YouTube
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -417,14 +413,6 @@ fun PlayerMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
         )
     ) {
-        if (!mediaMetadata.isLocal)
-            GridMenuItem(
-                icon = Icons.Rounded.Radio,
-                title = R.string.start_radio
-            ) {
-                playerConnection.playQueue(YouTubeQueue.radio(mediaMetadata), isRadio = true)
-                onDismiss()
-            }
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.QueueMusic,
             title = R.string.add_to_queue
@@ -447,12 +435,7 @@ fun PlayerMenu(
                     downloadUtil.download(mediaMetadata)
                 },
                 onRemoveDownload = {
-                    DownloadService.sendRemoveDownload(
-                        context,
-                        ExoDownloadService::class.java,
-                        mediaMetadata.id,
-                        false
-                    )
+                    downloadUtil.delete(mediaMetadata.id)
                 }
             )
         if (librarySong?.song?.inLibrary != null && !librarySong!!.song.isLocal) {
@@ -498,19 +481,6 @@ fun PlayerMenu(
             }
         }
 
-        if (!mediaMetadata.isLocal)
-            GridMenuItem(
-                icon = Icons.Rounded.Share,
-                title = R.string.share
-            ) {
-                val intent = Intent().apply {
-                    action = Intent.ACTION_SEND
-                    type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${mediaMetadata.id}")
-                }
-                context.startActivity(Intent.createChooser(intent, null))
-                onDismiss()
-            }
         GridMenuItem(
             icon = Icons.Rounded.Lyrics,
             title = R.string.toggle_lyrics
@@ -587,8 +557,6 @@ fun PlayerMenu(
                 database.transaction {
                     insert(mediaMetadata)
                 }
-
-                playlist.playlist.browseId?.let { YouTube.addToPlaylist(it, mediaMetadata.id) }
 
                 listOf(mediaMetadata.id)
             },

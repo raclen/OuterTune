@@ -44,7 +44,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastAny
 import androidx.media3.exoplayer.offline.Download
-import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalDownloadUtil
@@ -56,9 +55,7 @@ import com.dd3boh.outertune.db.entities.PlaylistSong
 import com.dd3boh.outertune.db.entities.Song
 import com.dd3boh.outertune.extensions.toMediaItem
 import com.dd3boh.outertune.models.toMediaMetadata
-import com.dd3boh.outertune.playback.ExoDownloadService
 import com.dd3boh.outertune.playback.queues.ListQueue
-import com.dd3boh.outertune.playback.queues.YouTubeQueue
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.items.PlaylistListItem
 import com.dd3boh.outertune.ui.dialog.AddToPlaylistDialog
@@ -69,8 +66,6 @@ import com.dd3boh.outertune.utils.getDownloadState
 import com.dd3boh.outertune.utils.lmScannerCoroutine
 import com.dd3boh.outertune.utils.reportException
 import com.dd3boh.outertune.utils.syncCoroutine
-import com.zionhuang.innertube.YouTube
-import com.zionhuang.innertube.models.WatchEndpoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -103,7 +98,7 @@ fun PlaylistMenu(
                     songs.forEach { s ->
                         val se = s.song
                         result += "#EXTINF:${se.duration},${s.artists.joinToString(";") { it.name }} - ${s.title}\n"
-                        result += if (se.isLocal) "${se.id}, ${se.localPath}" else "https://youtube.com/watch?v=${se.id}"
+                        result += if (se.isLocal) "${se.id}, ${se.localPath}" else se.id
                         result += "\n"
                     }
                     context.contentResolver.openOutputStream(uri)?.use { outputStream ->
@@ -214,27 +209,6 @@ fun PlaylistMenu(
             )
         }
 
-        if (isNetworkConnected) {
-            playlist.playlist.browseId?.let { browseId ->
-                playlist.playlist.radioEndpointParams?.let { radioEndpointParams ->
-                    GridMenuItem(
-                        icon = Icons.Rounded.Radio,
-                        title = R.string.start_radio
-                    ) {
-                        playerConnection.playQueue(
-                            YouTubeQueue(
-                                WatchEndpoint(
-                                    playlistId = "RDAMPL$browseId",
-                                    params = radioEndpointParams,
-                                )
-                            ), isRadio = true
-                        )
-                        onDismiss()
-                    }
-                }
-            }
-        }
-
         GridMenuItem(
             icon = Icons.AutoMirrored.Rounded.PlaylistPlay,
             title = R.string.play_next
@@ -324,9 +298,6 @@ fun PlaylistMenu(
                     update(playlist.playlist.copy(name = name))
                 }
 
-                coroutineScope.launch(syncCoroutine) {
-                    playlist.playlist.browseId?.let { YouTube.renamePlaylist(it, name) }
-                }
             }
         )
     }
@@ -360,12 +331,7 @@ fun PlaylistMenu(
                     onClick = {
                         showRemoveDownloadDialog = false
                         songs.forEach { song ->
-                            DownloadService.sendRemoveDownload(
-                                context,
-                                ExoDownloadService::class.java,
-                                song.song.id,
-                                false
-                            )
+                            downloadUtil.delete(song.song.id)
                         }
                     }
                 ) {
@@ -402,11 +368,6 @@ fun PlaylistMenu(
                             delete(playlist.playlist)
                         }
 
-                        if (!playlist.playlist.isLocal) {
-                            coroutineScope.launch(syncCoroutine) {
-                                playlist.playlist.browseId?.let { YouTube.deletePlaylist(it) }
-                            }
-                        }
                     }
                 ) {
                     Text(text = stringResource(android.R.string.ok))
@@ -437,15 +398,7 @@ fun PlaylistMenu(
         AddToPlaylistDialog(
             navController = navController,
             songIds = songs.map { it.id },
-            onPreAdd = { playlist ->
-                // add songs to playlist and push to ytm
-                songs.let { playlist.playlist.browseId?.let { YouTube.addPlaylistToPlaylist(it, playlist.id) } }
-
-                playlist.playlist.browseId?.let { playlistId ->
-                    YouTube.addPlaylistToPlaylist(playlistId, playlist.id)
-                }
-                songs.map { it.id }
-            },
+            onPreAdd = { songs.map { it.id } },
             onDismiss = { showChoosePlaylistDialog = false }
         )
     }

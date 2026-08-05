@@ -23,6 +23,7 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.constants.LxSourceNameKey
 import com.dd3boh.outertune.constants.LxSourceQualityKey
 import com.dd3boh.outertune.constants.LxSourceScriptKey
+import com.dd3boh.outertune.constants.DownloadQualityKey
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.ListPreference
@@ -41,6 +42,7 @@ fun LxSourceSettings(
     val (sourceScript, onSourceScriptChange) = rememberPreference(LxSourceScriptKey, "")
     val (sourceName, onSourceNameChange) = rememberPreference(LxSourceNameKey, "")
     val (quality, onQualityChange) = rememberPreference(LxSourceQualityKey, "320k")
+    val (downloadQuality, onDownloadQualityChange) = rememberPreference(DownloadQualityKey, "320k")
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             val script = context.contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
@@ -68,6 +70,23 @@ fun LxSourceSettings(
             values = listOf("128k", "320k", "flac", "flac24bit"),
             valueText = { it },
             onValueSelected = onQualityChange,
+            isEnabled = true,
+        )
+        ListPreference(
+            title = { Text("下载音质") },
+            icon = { Icon(Icons.Rounded.HighQuality, null) },
+            selectedValue = downloadQuality,
+            values = listOf("128k", "320k", "flac", "flac24bit"),
+            valueText = {
+                when (it) {
+                    "128k" -> "低品质（128k / MP3）"
+                    "320k" -> "标准（320k / MP3）"
+                    "flac" -> "高品质（FLAC）"
+                    "flac24bit" -> "无损 Hi-Res（FLAC 24bit）"
+                    else -> it
+                }
+            },
+            onValueSelected = onDownloadQualityChange,
             isEnabled = true,
         )
     }

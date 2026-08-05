@@ -35,9 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults.Indicator
-import androidx.compose.material3.pulltorefresh.pullToRefresh
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -118,8 +115,6 @@ fun LibraryPlaylistsScreen(
     val (showLikedAndDownloadedPlaylist) = rememberPreference(ShowLikedAndDownloadedPlaylist, true)
 
     val playlists by viewModel.allPlaylists.collectAsState()
-    val isSyncingRemotePlaylists by viewModel.isSyncingRemotePlaylists.collectAsState()
-    val pullRefreshState = rememberPullToRefreshState()
 
     val likedPlaylist = PlaylistEntity(id = "liked", name = stringResource(id = R.string.liked_songs))
     val downloadedPlaylist = PlaylistEntity(id = "downloaded", name = stringResource(id = R.string.downloaded_songs))
@@ -129,8 +124,6 @@ fun LibraryPlaylistsScreen(
 
     var showImportM3uDialog by rememberSaveable { mutableStateOf(false) }
     var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) { viewModel.syncPlaylists() }
 
     if (showCreatePlaylistDialog) {
         CreatePlaylistDialog(
@@ -171,10 +164,6 @@ fun LibraryPlaylistsScreen(
                     currentValue = filter,
                     onValueUpdate = {
                         filter = it
-                        if (it == PlaylistFilter.LIBRARY) viewModel.syncPlaylists()
-                    },
-                    isLoading = { filter ->
-                        filter == PlaylistFilter.LIBRARY && isSyncingRemotePlaylists
                     }
                 )
             }
@@ -253,14 +242,7 @@ fun LibraryPlaylistsScreen(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .pullToRefresh(
-                state = pullRefreshState,
-                isRefreshing = isSyncingRemotePlaylists,
-                onRefresh = {
-                    viewModel.syncPlaylists(true)
-                }
-            ),
+            .fillMaxSize(),
     ) {
         ScrollToTopManager(navController, lazyListState)
         when (viewType) {
@@ -447,13 +429,6 @@ fun LibraryPlaylistsScreen(
             )
         }
 
-        Indicator(
-            isRefreshing = isSyncingRemotePlaylists,
-            state = pullRefreshState,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(LocalPlayerAwareWindowInsets.current.asPaddingValues()),
-        )
 
     }
 }
