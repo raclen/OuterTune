@@ -22,9 +22,7 @@ import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
 import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Interests
 import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material.icons.rounded.MusicNote
-import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.SdCard
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.ElevatedCard
@@ -118,22 +116,6 @@ fun SettingsScreen(
         ElevatedCard(
             modifier = Modifier.fillMaxWidth()
         ) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.player_and_audio)) },
-                icon = { Icon(Icons.Rounded.PlayArrow, null) },
-                onClick = { navController.navigate("settings/player") }
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.backup_restore)) },
-                icon = { Icon(Icons.Rounded.Restore, null) },
-                onClick = { navController.navigate("settings/backup_restore") }
-            )
             PreferenceEntry(
                 title = { Text(stringResource(R.string.storage)) },
                 icon = { Icon(Icons.Rounded.Storage, null) },

@@ -360,19 +360,8 @@ fun SetupWizard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 48.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                            horizontalArrangement = Arrangement.End
                         ) {
-                            TextButton(
-                                onClick = {
-                                    navController.navigate("settings/backup_restore")
-                                }
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.oobe_use_backup),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-
                             TextButton(
                                 onClick = {
                                     oobeStatus = OOBE_VERSION

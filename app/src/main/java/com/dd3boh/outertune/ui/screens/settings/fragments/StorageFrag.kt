@@ -21,10 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.rounded.Backup
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FolderCopy
-import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material.icons.rounded.Sync
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -62,7 +60,6 @@ import com.dd3boh.outertune.constants.MaxImageCacheSizeKey
 import com.dd3boh.outertune.constants.MaxSongCacheSizeKey
 import com.dd3boh.outertune.constants.ScanPathsKey
 import com.dd3boh.outertune.constants.ThumbnailCornerRadius
-import com.dd3boh.outertune.db.MusicDatabase
 import com.dd3boh.outertune.extensions.tryOrNull
 import com.dd3boh.outertune.ui.component.ListPreference
 import com.dd3boh.outertune.ui.component.PreferenceEntry
@@ -78,60 +75,10 @@ import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.scanners.absoluteFilePathFromUri
 import com.dd3boh.outertune.utils.scanners.stringFromUriList
 import com.dd3boh.outertune.utils.scanners.uriListFromString
-import com.dd3boh.outertune.viewmodels.BackupRestoreViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-
-@Composable
-fun ColumnScope.BackupAndRestoreFrag(viewModel: BackupRestoreViewModel) {
-    val context = LocalContext.current
-
-    val backupLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/octet-stream")) { uri ->
-            if (uri != null) {
-                viewModel.backup(uri)
-            }
-        }
-    val restoreLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-            viewModel.restore(uri)
-        }
-    }
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.action_backup)) },
-            icon = { Icon(Icons.Rounded.Backup, null) },
-            onClick = {
-                val formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
-                backupLauncher.launch(
-                    "${context.getString(R.string.app_name)}_${MusicDatabase.MUSIC_DATABASE_VERSION}_${
-                        LocalDateTime.now().format(formatter)
-                    }.backup"
-                )
-            }
-        )
-    }
-    Spacer(modifier = Modifier.height(16.dp))
-
-    ElevatedCard(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        PreferenceEntry(
-            title = { Text(stringResource(R.string.action_restore)) },
-            icon = { Icon(Icons.Rounded.Restore, null) },
-            onClick = {
-                restoreLauncher.launch(arrayOf("application/octet-stream"))
-            }
-        )
-    }
-}
 
 @Composable
 fun ColumnScope.DownloadsFrag() {

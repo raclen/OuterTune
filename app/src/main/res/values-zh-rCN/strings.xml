@@ -198,13 +198,7 @@
     <string name="clear_search_history">清除搜索历史</string>
     <string name="clear_search_history_confirm">是否确定要清除所有搜索历史？</string>
     <string name="enable_kugou">使用酷狗音乐提供歌词</string>
-    <string name="backup_restore">备份与还原</string>
-    <string name="action_backup">备份</string>
-    <string name="action_restore">还原</string>
     <string name="imported_playlist">已导入的播放列表</string>
-    <string name="backup_create_success">成功新建备份</string>
-    <string name="backup_create_failed">无法新建备份</string>
-    <string name="restore_failed">无法还原备份</string>
     <string name="about">关于</string>
     <string name="app_version">应用版本</string>
     <string name="new_version_available">有新版本</string>

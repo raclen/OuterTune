@@ -72,7 +72,6 @@
     <string name="local_player_settings_title">本地媒体</string>
     <string name="flat_subfolders_title">合并子文件夹</string>
     <string name="flat_subfolders_description">禁用以保留磁盘上的文件结构</string>
-    <string name="import_innertune_tooltip">支持恢复 InnerTune 备份，但由于技术限制可能会出现异常。不支持 fork 版本。</string>
     <string name="m3u_import_playlist">导入播放列表 （m3u）</string>
     <string name="m3u_import_playlist_failed">导入失败</string>
     <string name="auto_scanner_title">自动扫描</string>
@@ -106,7 +105,6 @@
     <string name="dev_settings_description">显示用于开发的其他高级设置</string>
     <string name="oobe_welcome_message">欢迎来到 OuterTune</string>
     <string name="oobe_complete">OuterTune设置完成，可立即使用。探索你的音乐，发现新歌曲，享受美好的体验吧！</string>
-    <string name="oobe_use_backup">我有备份</string>
     <string name="action_back">返回</string>
     <string name="action_next">下一个</string>
     <string name="action_skip">跳过</string>
@@ -126,7 +124,6 @@
     <string name="speed_fast">快速</string>
     <string name="speed_very_fast">非常快速</string>
     <string name="android_auto">Android Auto</string>
-    <string name="err_restore_incompatible_database">无法恢复不兼容的数据库</string>
     <string name="grp_library_and_content">音乐库和内容</string>
     <string name="grp_account_sync">账号和同步</string>
     <string name="grp_behavior">行为</string>
@@ -244,7 +241,6 @@
     <string name="oobe_welcome_tip">建议完成快速设置，以便配置主题、本地媒体、洛雪音源和下载等关键功能。</string>
     <string name="oobe_cache_title">歌曲缓存</string>
     <string name="oobe_cache_subtitle">设置歌曲缓存容量，可减少网络波动对在线播放的影响</string>
-    <string name="restore_lm_tooltip">对于全新安装的应用，自定义下载路径和本地媒体扫描路径可能无法正常工作。要解决此问题，请先移除这些路径，然后重新添加。</string>
     <string name="no_recent_plays">还没有播放记录</string>
     <string name="high_contrast" translatable="false">高对比度模式兼容</string>
     <string name="high_contrast_description" translatable="false">开启后修复 Android 高对比度模式下的部分显示问题</string>
