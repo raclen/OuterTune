@@ -31,6 +31,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Response
 import java.io.IOException
+import java.net.URI
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -94,6 +95,11 @@ object LxSourceRuntime {
             result["result"]?.jsonObject
                 ?.get("data")?.jsonObject
                 ?.get("url")?.jsonPrimitive?.contentOrNull
+                ?.also { url ->
+                    runCatching { URI(url).scheme?.lowercase() }.getOrNull()?.let { scheme ->
+                        Log.i(TAG, "音源播放地址协议: $scheme")
+                    }
+                }
                 ?: error("洛雪音源没有返回播放地址")
         } finally {
             pending.remove(requestKey)

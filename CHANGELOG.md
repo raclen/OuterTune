@@ -1,3 +1,10 @@
+# OuterTune v1.0.6
+
+## 修复
+
+- 允许洛雪音源返回的 HTTP 音频地址播放，修复酷狗、网易云和 QQ 音乐搜索结果播放时报 `CLEARTEXT communication not permitted`。
+- 记录音源播放地址协议，便于定位自定义音源的网络问题。
+
 # OuterTune v1.0.5
 
 ## 构建
