@@ -47,12 +47,6 @@ jobs:
       - name: Build core userdebug APK
         run: ./gradlew assembleCoreUserdebug
 
-      - name: Resolve ffmpeg libs
-        run: git clone https://github.com/mikooomich/ffmpeg-android-maker-prebuilt/ -b audio ffMetadataEx/ffmpeg-android-maker
-
-      - name: Build full userdebug APK
-        run: ./gradlew assembleFullUserdebug
-
       - name: Create github userdebug draft
         uses: softprops/action-gh-release@v2
         with:
@@ -61,6 +55,5 @@ jobs:
           draft: true
           files: |
             app/build/outputs/apk/core/userdebug/*.apk
-            app/build/outputs/apk/full/userdebug/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.REL_TOKEN || github.token }}

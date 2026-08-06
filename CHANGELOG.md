@@ -1,3 +1,9 @@
+# OuterTune v1.0.7
+
+## 构建
+
+- 正式构建仅输出 `core-arm64-v8a` APK，移除 x86、armeabi-v7a、universal 和 full 变体产物，减少下载数量并缩短构建时间。
+
 # OuterTune v1.0.6
 
 ## 修复
