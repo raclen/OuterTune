@@ -55,6 +55,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationRail
@@ -64,6 +66,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.contentColorFor
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -131,6 +134,8 @@ import com.dd3boh.outertune.playback.MediaControllerViewModel
 import com.dd3boh.outertune.playback.MusicService
 import com.dd3boh.outertune.playback.PlayerConnection
 import com.dd3boh.outertune.ui.component.rememberBottomSheetState
+import com.dd3boh.outertune.ui.component.MainNavigationDrawer
+import com.dd3boh.outertune.ui.component.MainNavigationTopBar
 import com.dd3boh.outertune.ui.component.shimmer.ShimmerTheme
 import com.dd3boh.outertune.ui.menu.BottomSheetMenu
 import com.dd3boh.outertune.ui.menu.MenuState
@@ -349,7 +354,7 @@ class MainActivity : ComponentActivity() {
                     Log.v(MAIN_TAG, "RC-2.2")
 
                     fun getNavPadding(): Dp {
-                        return if (!useNavRail) (if (slimNav) 52.dp else 68.dp) else MinMiniPlayerHeight
+                        return 0.dp
                     }
 
                     val playerBottomSheetState = rememberBottomSheetState(
@@ -363,26 +368,13 @@ class MainActivity : ComponentActivity() {
                             bottomInset,
                             playerBottomSheetState.isDismissed,
                         ) {
-                            // TODO: Navbar is shown in all screens except for oobe (which doesn't use these insets). Idk what do to tbh
-                            var bottom = bottomInset + if (!useNavRail) NavigationBarHeight else 0.dp
+                            var bottom = bottomInset
 
                             if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
-                            if (!tabMode) {
-                                windowsInsets
-                                    .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                                    .add(cutoutInsets.only(WindowInsetsSides.Horizontal))
-                                    .add(
-                                        WindowInsets(
-                                            left = if (!useNavRail) 0.dp else NavigationBarHeight,
-                                            top = AppBarHeight,
-                                            bottom = bottom
-                                        )
-                                    )
-                            } else {
-                                windowsInsets
-                                    .only(WindowInsetsSides.Top)
-                                    .add(WindowInsets(top = AppBarHeight, bottom = bottom))
-                            }
+                            windowsInsets
+                                .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
+                                .add(cutoutInsets.only(WindowInsetsSides.Horizontal))
+                                .add(WindowInsets(top = AppBarHeight, bottom = bottom))
                         }
 
                     val scrollBehavior = appBarScrollBehavior(
@@ -409,14 +401,13 @@ class MainActivity : ComponentActivity() {
                                 .fillMaxSize()
                         ) {
                             Log.v(MAIN_TAG, "RC-3")
+                            val drawerState = rememberDrawerState(DrawerValue.Closed)
 
 
                             val navHost: @Composable() (() -> Unit) = @Composable {
                                 NavHost(
                                     navController = navController,
-                                    startDestination = (Screens.getAllScreens()
-                                        .find { it.route == defaultOpenTab })?.route
-                                        ?: Screens.Home.route,
+                                    startDestination = Screens.Songs.route,
                                     enterTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
                                             it.route == targetState.destination.route
@@ -507,7 +498,7 @@ class MainActivity : ComponentActivity() {
                                         PlayerScreen(navController, bottomPadding = getNavPadding())
                                     }
                                     composable("history") {
-                                        HistoryScreen(navController)
+                                        HistoryScreen(navController, showSongFilters = true)
                                     }
                                     composable("stats") {
                                         StatsScreen(navController)
@@ -816,76 +807,67 @@ class MainActivity : ComponentActivity() {
                                 )
                             }
 
-                            // phone
-                            if (!tabMode) {
-                                navHost()
+                            ModalNavigationDrawer(
+                                drawerState = drawerState,
+                                drawerContent = {
+                                    MainNavigationDrawer(
+                                        currentRoute = navBackStackEntry?.destination?.route,
+                                        onNavigate = { route ->
+                                            if (playerBottomSheetState.isExpanded) {
+                                                playerBottomSheetState.collapseSoft()
+                                            }
+                                            if (navBackStackEntry?.destination?.route == route) {
+                                                navBackStackEntry?.savedStateHandle?.set("scrollToTop", true)
+                                            } else {
+                                                navController.navigate(route) {
+                                                    popUpTo(navController.graph.startDestinationId) {
+                                                        saveState = true
+                                                    }
+                                                    launchSingleTop = true
+                                                    restoreState = true
+                                                }
+                                            }
+                                            haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
+                                            coroutineScope.launch { drawerState.close() }
+                                        },
+                                    )
+                                },
+                            ) {
+                                Box(Modifier.fillMaxSize()) {
+                                    navHost()
+                                    SearchBarContainer(navController, scrollBehavior)
+                                    MainNavigationTopBar(
+                                        currentRoute = navBackStackEntry?.destination?.route,
+                                        onOpenDrawer = {
+                                            if (playerBottomSheetState.isExpanded) {
+                                                playerBottomSheetState.collapseSoft()
+                                            }
+                                            coroutineScope.launch { drawerState.open() }
+                                        },
+                                        onSearch = {
+                                            navController.navigate("search") {
+                                                launchSingleTop = true
+                                            }
+                                        },
+                                        scrollBehavior = scrollBehavior,
+                                    )
 
-                                SearchBarContainer(navController, scrollBehavior)
-
-                                if (oobeStatus >= OOBE_VERSION) {
-                                    if (!navigationItems.contains(Screens.Player)) {
+                                    if (oobeStatus >= OOBE_VERSION) {
                                         BottomSheetPlayer(
                                             state = playerBottomSheetState,
-                                            navController = navController
+                                            navController = navController,
                                         )
                                     }
+                                    bottomSheetMenu()
 
-                                    if (!useNavRail) {
-                                        navbar()
-                                    } else {
-                                        navRail(if (LocalLayoutDirection.current == LayoutDirection.Rtl) Alignment.BottomEnd else Alignment.BottomStart)
-                                    }
-                                }
-                                bottomSheetMenu()
-
-                                SnackbarHost(
-                                    hostState = snackbarHostState,
-                                    modifier = Modifier
-                                        .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-                                        .align(Alignment.BottomCenter)
-                                )
-                            } else {
-                                // tabmode only enables >= 600dp (unless it's forced on). For those who wish to try down
-                                // to the widescreen limit, 320dp player is the minimum acceptable size for the player
-                                val playerW = (maxW.value * 0.4).coerceIn(320.0, 500.0)
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-                                ) {
-                                    Box(
+                                    SnackbarHost(
+                                        hostState = snackbarHostState,
                                         modifier = Modifier
-                                            .width(playerW.dp)
-                                    ) {
-                                        if (oobeStatus >= OOBE_VERSION && !navigationItems.contains(Screens.Player)) {
-                                            PlayerScreen(navController)
-                                        }
-                                    }
-
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                    ) {
-                                        navHost()
-
-                                        SearchBarContainer(navController, scrollBehavior)
-
-                                        if (oobeStatus >= OOBE_VERSION) {
-                                            navbar()
-                                        }
-                                        bottomSheetMenu()
-
-                                        SnackbarHost(
-                                            hostState = snackbarHostState,
-                                            modifier = Modifier
-                                                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-                                                .align(Alignment.BottomCenter)
-                                        )
-                                    }
+                                            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                                            .align(Alignment.BottomCenter),
+                                    )
                                 }
-
                             }
-
                             // Setup wizard
                             LaunchedEffect(Unit) {
                                 if (oobeStatus < OOBE_VERSION) {

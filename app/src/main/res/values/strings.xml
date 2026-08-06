@@ -28,6 +28,7 @@
     <string name="filter_library">媒体库</string>
     <string name="filter_liked">喜欢</string>
     <string name="filter_downloaded">已下载</string>
+    <string name="filter_recently_played">最近播放</string>
     <string name="filter_all">全部</string>
     <string name="filter_songs">歌曲</string>
     <string name="filter_videos">视频</string>

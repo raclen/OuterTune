@@ -28,15 +28,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
@@ -61,16 +58,13 @@ import com.dd3boh.outertune.constants.LYRIC_FETCH_TIMEOUT
 import com.dd3boh.outertune.constants.MAX_LM_SCANNER_JOBS
 import com.dd3boh.outertune.constants.OOBE_VERSION
 import com.dd3boh.outertune.constants.SNACKBAR_VERY_SHORT
-import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.ContributorCard
 import com.dd3boh.outertune.ui.component.ContributorInfo
 import com.dd3boh.outertune.ui.component.ContributorType.CUSTOM
 import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.SettingsClickToReveal
-import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.button.IconLabelButton
-import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.scanners.FFmpegScanner
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.FfmpegLibrary
 
@@ -294,21 +288,4 @@ fun AboutScreen(
         }
 
     }
-
-    TopAppBar(
-        title = { Text(stringResource(R.string.about)) },
-        navigationIcon = {
-            IconButton(
-                onClick = navController::navigateUp,
-                onLongClick = navController::backToMain
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null
-                )
-            }
-        },
-        windowInsets = TopBarInsets,
-        scrollBehavior = scrollBehavior
-    )
 }

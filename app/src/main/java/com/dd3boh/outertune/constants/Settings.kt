@@ -137,7 +137,7 @@ enum class LibrarySortType {
 }
 
 enum class SongFilter {
-    LIBRARY, LIKED, DOWNLOADED
+    LIBRARY, LIKED, DOWNLOADED, RECENT
 }
 
 enum class ArtistFilter {

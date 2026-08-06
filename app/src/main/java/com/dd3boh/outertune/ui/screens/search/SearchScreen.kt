@@ -36,14 +36,11 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.fastAny
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.dd3boh.outertune.LocalDatabase
 import com.dd3boh.outertune.LocalPlayerAwareWindowInsets
 import com.dd3boh.outertune.R
-import com.dd3boh.outertune.constants.DEFAULT_ENABLED_TABS
-import com.dd3boh.outertune.constants.EnabledTabsKey
 import com.dd3boh.outertune.constants.PauseSearchHistoryKey
 import com.dd3boh.outertune.constants.SearchSource
 import com.dd3boh.outertune.constants.SearchSourceKey
@@ -51,11 +48,9 @@ import com.dd3boh.outertune.db.entities.SearchHistory
 import com.dd3boh.outertune.extensions.tabMode
 import com.dd3boh.outertune.ui.component.SearchBar
 import com.dd3boh.outertune.ui.component.button.IconButton
-import com.dd3boh.outertune.ui.screens.Screens
 import com.dd3boh.outertune.utils.dataStore
 import com.dd3boh.outertune.utils.get
 import com.dd3boh.outertune.utils.rememberEnumPreference
-import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.urlEncode
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,10 +64,8 @@ fun SearchBarContainer(
     val database = LocalDatabase.current
     val focusManager = LocalFocusManager.current
 
-    val enabledTabs by rememberPreference(EnabledTabsKey, defaultValue = DEFAULT_ENABLED_TABS)
     var searchSource by rememberEnumPreference(SearchSourceKey, SearchSource.ONLINE)
 
-    val navigationItems = remember { Screens.getScreens(enabledTabs) }
     val searchBarFocusRequester = remember { FocusRequester() }
 
     val (query, onQueryChange) = rememberSaveable(stateSaver = TextFieldValue.Saver) {
@@ -88,9 +81,6 @@ fun SearchBarContainer(
         searchActive = newActive
         if (!newActive) {
             focusManager.clearFocus()
-            if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
-                onQueryChange(TextFieldValue())
-            }
         }
     }
 
@@ -111,15 +101,20 @@ fun SearchBarContainer(
     }
 
 
-    val shouldShowSearchBar = remember(searchActive, navBackStackEntry) {
-        (searchActive || (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } &&
-                navBackStackEntry?.destination?.route != Screens.Settings.route) ||
-                navBackStackEntry?.destination?.route?.startsWith("search/") == true)
+    val currentRoute = navBackStackEntry?.destination?.route
+    val shouldShowSearchBar = remember(searchActive, currentRoute) {
+        searchActive || currentRoute?.startsWith("search") == true
     }
 
-    LaunchedEffect(navBackStackEntry) {
-        if (searchActive) {
+    LaunchedEffect(currentRoute) {
+        if (currentRoute == "search") {
+            searchActive = true
+            searchBarFocusRequester.requestFocus()
+        } else if (searchActive) {
             onSearchActiveChange(false)
+        }
+        if (currentRoute?.startsWith("search") != true) {
+            onQueryChange(TextFieldValue())
         }
     }
 

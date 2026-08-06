@@ -86,7 +86,7 @@ class LibrarySongsViewModel @Inject constructor(
         return context.dataStore.data
             .map {
                 Triple(
-                    it[SongFilterKey].toEnum(SongFilter.LIKED),
+                    it[SongFilterKey].toEnum(SongFilter.LIBRARY),
                     it[SongSortTypeKey].toEnum(SongSortType.CREATE_DATE),
                     (it[SongSortDescendingKey] != false)
                 )
@@ -97,6 +97,7 @@ class LibrarySongsViewModel @Inject constructor(
                     SongFilter.LIBRARY -> database.songs(sortType, descending)
                     SongFilter.LIKED -> database.likedSongs(sortType, descending)
                     SongFilter.DOWNLOADED -> database.downloadSongs(sortType, descending)
+                    SongFilter.RECENT -> database.songs(sortType, descending)
                 }
             }.stateIn(viewModelScope, SharingStarted.Lazily, null)
     }

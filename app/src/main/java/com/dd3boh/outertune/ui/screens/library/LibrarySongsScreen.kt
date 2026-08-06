@@ -102,7 +102,7 @@ fun LibrarySongsScreen(
     val playerConnection = LocalPlayerConnection.current ?: return
     val snackbarHostState = LocalSnackbarHostState.current
 
-    var filter by rememberEnumPreference(SongFilterKey, SongFilter.LIKED)
+    var filter by rememberEnumPreference(SongFilterKey, SongFilter.LIBRARY)
     val localLibEnable by rememberPreference(LocalLibraryEnableKey, defaultValue = true)
     val (sortType, onSortTypeChange) = rememberEnumPreference(SongSortTypeKey, SongSortType.CREATE_DATE)
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
@@ -143,11 +143,16 @@ fun LibrarySongsScreen(
             chips = listOf(
                 SongFilter.LIKED to stringResource(R.string.filter_liked),
                 SongFilter.LIBRARY to stringResource(R.string.filter_library),
-                SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded)
+                SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded),
+                SongFilter.RECENT to stringResource(R.string.filter_recently_played),
             ),
             currentValue = filter,
             onValueUpdate = {
-                filter = it
+                if (it == SongFilter.RECENT) {
+                    navController.navigate("history")
+                } else {
+                    filter = it
+                }
             }
         )
     }
@@ -208,6 +213,11 @@ fun LibrarySongsScreen(
                                             title = stringResource(R.string.filter_downloaded),
                                             leadingIcon = null,
                                             action = { filter = SongFilter.DOWNLOADED }
+                                        ),
+                                        DropdownItem(
+                                            title = stringResource(R.string.filter_recently_played),
+                                            leadingIcon = null,
+                                            action = { navController.navigate("history") }
                                         ),
                                     )
                             ),

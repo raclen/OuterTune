@@ -68,6 +68,8 @@ import com.dd3boh.outertune.LocalPlayerConnection
 import com.dd3boh.outertune.LocalSnackbarHostState
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.ListThumbnailSize
+import com.dd3boh.outertune.constants.SongFilter
+import com.dd3boh.outertune.constants.SongFilterKey
 import com.dd3boh.outertune.constants.SwipeToQueueKey
 import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.db.entities.EventWithSong
@@ -75,6 +77,7 @@ import com.dd3boh.outertune.extensions.togglePlayPause
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.queues.ListQueue
 import com.dd3boh.outertune.ui.component.FloatingFooter
+import com.dd3boh.outertune.ui.component.ChipsRow
 import com.dd3boh.outertune.ui.component.LazyColumnScrollbar
 import com.dd3boh.outertune.ui.component.NavigationTitle
 import com.dd3boh.outertune.ui.component.ScrollToTopManager
@@ -83,6 +86,7 @@ import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.component.items.SongListItem
 import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberPreference
+import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.viewmodels.DateAgo
 import com.dd3boh.outertune.viewmodels.HistoryViewModel
 import kotlinx.coroutines.FlowPreview
@@ -95,6 +99,7 @@ import kotlin.math.roundToInt
 @Composable
 fun HistoryScreen(
     navController: NavController,
+    showSongFilters: Boolean = false,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val database = LocalDatabase.current
@@ -106,6 +111,7 @@ fun HistoryScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val swipeEnabled by rememberPreference(SwipeToQueueKey, true)
+    var songFilter by rememberEnumPreference(SongFilterKey, SongFilter.LIBRARY)
 
     val snackbarHostState = LocalSnackbarHostState.current
 
@@ -202,6 +208,29 @@ fun HistoryScreen(
                 )
                 .padding(bottom = if (inSelectMode) 64.dp else 0.dp)
         ) {
+            if (showSongFilters) {
+                stickyHeader(key = "song_filter") {
+                    Row(
+                        modifier = Modifier.background(MaterialTheme.colorScheme.background),
+                    ) {
+                        ChipsRow(
+                            chips = listOf(
+                                SongFilter.LIKED to stringResource(R.string.filter_liked),
+                                SongFilter.LIBRARY to stringResource(R.string.filter_library),
+                                SongFilter.DOWNLOADED to stringResource(R.string.filter_downloaded),
+                                SongFilter.RECENT to stringResource(R.string.filter_recently_played),
+                            ),
+                            currentValue = SongFilter.RECENT,
+                            onValueUpdate = { filter ->
+                                if (filter != SongFilter.RECENT) {
+                                    songFilter = filter
+                                    navController.popBackStack()
+                                }
+                            },
+                        )
+                    }
+                }
+            }
             stickyHeader(
                 key = "searchbar"
             ) {
@@ -346,42 +375,44 @@ fun HistoryScreen(
         )
     }
 
-    TopAppBar(
-        title = { Text(stringResource(R.string.history)) },
-        navigationIcon = {
-            IconButton(
-                onClick = {
-                    if (isSearching) {
-                        isSearching = false
-                        query = TextFieldValue()
-                    } else {
-                        navController.navigateUp()
-                    }
-                },
-                onLongClick = {
-                    if (!isSearching) {
-                        navController.backToMain()
-                    }
-                }
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null
-                )
-            }
-        },
-        actions = {
-            if (!isSearching) {
+    if (!showSongFilters) {
+        TopAppBar(
+            title = { Text(stringResource(R.string.history)) },
+            navigationIcon = {
                 IconButton(
-                    onClick = { isSearching = true }
+                    onClick = {
+                        if (isSearching) {
+                            isSearching = false
+                            query = TextFieldValue()
+                        } else {
+                            navController.navigateUp()
+                        }
+                    },
+                    onLongClick = {
+                        if (!isSearching) {
+                            navController.backToMain()
+                        }
+                    }
                 ) {
                     Icon(
-                        Icons.Rounded.Search,
+                        Icons.AutoMirrored.Rounded.ArrowBack,
                         contentDescription = null
                     )
                 }
-            }
-        },
-        windowInsets = TopBarInsets,
-    )
+            },
+            actions = {
+                if (!isSearching) {
+                    IconButton(
+                        onClick = { isSearching = true }
+                    ) {
+                        Icon(
+                            Icons.Rounded.Search,
+                            contentDescription = null
+                        )
+                    }
+                }
+            },
+            windowInsets = TopBarInsets,
+        )
+    }
 }

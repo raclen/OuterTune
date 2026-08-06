@@ -55,7 +55,7 @@ jobs:
         with:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', env.date_tag) }}
           name: "OuterTune ${{ github.ref_type == 'tag' && github.ref_name || format('build-{0}', env.date_tag) }}"
-          draft: true
+          draft: false
           body_path: CHANGELOG.md
           files: |
             app/build/outputs/apk/core/release/*.apk

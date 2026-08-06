@@ -31,7 +31,15 @@
 - **正确做法**：保留本地 `media` dependency substitution（项目依赖其中的定制 API），并将 `media/build.gradle` 的 AGP 版本对齐主工程。
 - **验证方式**：`:app:compileCoreDebugKotlin` 不出现 `AgpVersionCompatibilityRule`，且 Media3 定制 override 可以编译。
 - **适用范围**：当前二次开发分支的 Android 构建。
-- 不主动打包APK，如果打包apk，需要增加版本号
+- 不主动打包APK，如果打包apk，需要增加版本号，只需要打包出v8a版本的包
+
+## 本地 Android 构建使用临时 JDK 与 SDK
+
+- **触发信号**：本地执行 Gradle 编译或打包，且系统未配置 `JAVA_HOME`、`ANDROID_HOME`。
+- **根因/约束**：`media` composite build 不会继承根工程的 `local.properties`，而遗留 Kotlin 守护进程可能占用增量编译缓存。
+- **正确做法**：使用 `E:\code\jdk21-temp\jdk-21.0.12` 作为 `JAVA_HOME`，使用 `E:\code\android-sdk-temp` 作为 `ANDROID_HOME` 与 `ANDROID_SDK_ROOT`；PowerShell 中执行 `./gradlew.bat <task> --no-daemon "-Dkotlin.incremental=false"`。完成后执行 `./gradlew.bat --stop` 释放 Gradle/Kotlin JVM。
+- **验证方式**：`:app:compileCoreDebugKotlin` 输出 `BUILD SUCCESSFUL`；构建完成后 `./gradlew.bat --status` 不显示运行中的 daemon。
+- **适用范围**：本机的编译、打包与 Gradle 故障排查。
 
 ## 首页与界面本地化保持精简
 
@@ -80,3 +88,11 @@
 - **正确做法**：列表封面为空时使用本地音频文件作为内嵌封面读取源；歌词解析先读取文件内的 `LYRICS` 标签，命中后直接展示且不访问在线歌词源。
 - **验证方式**：无独立封面路径的本地歌曲在最近播放与歌曲列表显示内嵌封面；含内嵌歌词的本地歌曲播放时不触发在线歌词请求。
 - **适用范围**：本地扫描、歌曲列表、播放器歌词与最近播放。
+
+## 主导航保持固定抽屉结构
+
+- **触发信号**：调整首页、主导航入口或播放器底部安全区。
+- **根因/约束**：底部标签栏与迷你播放器同时占用屏幕底部，且可配置标签会使入口分散、默认页不稳定。
+- **正确做法**：主入口固定为左侧抽屉中的歌曲、歌单、设置和关于；应用始终从歌曲页进入，歌曲页按喜欢、媒体库、已下载和最近播放分组，默认媒体库；不恢复底部标签栏。
+- **验证方式**：启动后显示歌曲页与媒体库筛选；抽屉仅显示四个主入口；迷你播放器上方不留底部导航空白。
+- **适用范围**：`MainActivity`、主导航组件、歌曲页与界面设置。

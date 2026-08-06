@@ -35,8 +35,6 @@ import com.dd3boh.outertune.ui.component.PreferenceEntry
 import com.dd3boh.outertune.ui.component.PreferenceGroupTitle
 import com.dd3boh.outertune.ui.component.button.IconButton
 import com.dd3boh.outertune.ui.screens.settings.fragments.SwipeGesturesFrag
-import com.dd3boh.outertune.ui.screens.settings.fragments.TabArrangementFrag
-import com.dd3boh.outertune.ui.screens.settings.fragments.TabExtrasFrag
 import com.dd3boh.outertune.ui.utils.backToMain
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -52,24 +50,6 @@ fun InterfaceSettings(
             .padding(horizontal = 16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        PreferenceGroupTitle(
-            title = stringResource(R.string.grp_layout)
-        )
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            TabArrangementFrag()
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            TabExtrasFrag()
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-
         PreferenceGroupTitle(
             title = stringResource(R.string.grp_behavior)
         )

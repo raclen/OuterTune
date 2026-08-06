@@ -17,9 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.LibraryBooks
-import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.Interests
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.MusicNote
@@ -29,7 +27,6 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -45,12 +42,9 @@ import androidx.navigation.NavController
 import com.dd3boh.outertune.LocalSnackbarHostState
 import com.dd3boh.outertune.R
 import com.dd3boh.outertune.constants.LastVersionKey
-import com.dd3boh.outertune.constants.TopBarInsets
 import com.dd3boh.outertune.constants.UpdateAvailableKey
 import com.dd3boh.outertune.ui.component.ColumnWithContentPadding
 import com.dd3boh.outertune.ui.component.PreferenceEntry
-import com.dd3boh.outertune.ui.component.button.IconButton
-import com.dd3boh.outertune.ui.utils.backToMain
 import com.dd3boh.outertune.utils.rememberPreference
 
 val SETTINGS_TAG = "Settings"
@@ -124,31 +118,5 @@ fun SettingsScreen(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            PreferenceEntry(
-                title = { Text(stringResource(R.string.about)) },
-                icon = { Icon(Icons.Rounded.Info, null) },
-                onClick = { navController.navigate("settings/about") }
-            )
-        }
     }
-
-    TopAppBar(
-        title = { Text(stringResource(R.string.settings)) },
-        navigationIcon = {
-            IconButton(
-                onClick = navController::navigateUp,
-                onLongClick = navController::backToMain
-            ) {
-                Icon(
-                    Icons.AutoMirrored.Rounded.ArrowBack,
-                    contentDescription = null
-                )
-            }
-        },
-        windowInsets = TopBarInsets,
-        scrollBehavior = scrollBehavior
-    )
 }
