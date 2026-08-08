@@ -29,11 +29,19 @@ fun uriListFromString(str: String): List<Uri> {
 }
 
 fun fileFromUri(context: Context, uri: Uri): File? {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        if (!DocumentsContract.isTreeUri(uri)) return null
-        if (uri.authority != "com.android.externalstorage.documents") return null
+    if (uri.authority != "com.android.externalstorage.documents") return null
 
-        val treeDocId = DocumentsContract.getDocumentId(uri)
+    // SAF 下载文件通常是 tree/document 子 URI，而不是单独的 tree URI。
+    // 两种 URI 都可以从 documentId 还原到外部存储中的实际文件路径。
+    val documentId = when {
+        uri.pathSegments.contains("document") -> DocumentsContract.getDocumentId(uri)
+        DocumentsContract.isTreeUri(uri) -> DocumentsContract.getTreeDocumentId(uri)
+        DocumentsContract.isDocumentUri(context, uri) -> DocumentsContract.getDocumentId(uri)
+        else -> return null
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        val treeDocId = documentId
         val rootId: String
         val relativePath: String
 
@@ -58,12 +66,7 @@ fun fileFromUri(context: Context, uri: Uri): File? {
 
         return rootDir?.let { if (relativePath.isEmpty()) it else File(it, relativePath) }
     } else {
-        if (!DocumentsContract.isDocumentUri(context, uri)) return null
-
-        if (uri.authority != "com.android.externalstorage.documents") return null
-
-        val docId = DocumentsContract.getDocumentId(uri)
-        val parts = docId.split(":")
+        val parts = documentId.split(":", limit = 2)
 
         if (parts.size < 2) return null
 

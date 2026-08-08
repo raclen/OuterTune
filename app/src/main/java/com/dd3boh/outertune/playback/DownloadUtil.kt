@@ -106,10 +106,23 @@ class DownloadUtil @Inject constructor(
         if (isProcessingDownloads.value) return
         isProcessingDownloads.value = true
         try {
-            database.removeAllDownloadedSongs()
             val now = LocalDateTime.now()
             val discovered = mutableMapOf<String, LocalDateTime>()
-            localMgr.getAvailableFiles(false).forEach { (mediaId, uri) ->
+            val availableFiles = localMgr.getAvailableFiles(false)
+            val existingBeforeScan = database.downloadedOrQueuedSongs().first()
+
+            // 目录权限暂时失效或目录尚未初始化时不要清空数据库，否则下载列表会瞬间消失。
+            if (localMgr.allDirs.isEmpty()) return
+            // 扫描结果为空通常意味着 SAF 临时权限/IO 异常；保留已有记录等待下次扫描。
+            if (availableFiles.isEmpty() && existingBeforeScan.isNotEmpty()) {
+                val activeDownloads = downloads.value.filterValues { it == STATE_DOWNLOADING }
+                downloads.value = activeDownloads + existingBeforeScan
+                    .filter { it.song.dateDownload != null }
+                    .associate { it.song.id to it.song.dateDownload!! }
+                return
+            }
+
+            availableFiles.forEach { (mediaId, uri) ->
                 try {
                     val file = fileFromUri(context, uri)
                         ?: throw InvalidAudioFileException("无法访问下载文件")
@@ -119,7 +132,16 @@ class DownloadUtil @Inject constructor(
                     reportException(error)
                 }
             }
-            downloads.value = discovered
+
+            val activeDownloads = downloads.value
+                .filterValues { it == STATE_DOWNLOADING }
+            val existing = database.downloadedOrQueuedSongs().first()
+            database.transaction {
+                existing
+                    .filter { it.song.dateDownload != null && it.song.id !in discovered && it.song.id !in activeDownloads }
+                    .forEach { removeDownloadSong(it.song.id) }
+            }
+            downloads.value = activeDownloads + discovered
         } finally {
             isProcessingDownloads.value = false
         }
@@ -129,16 +151,21 @@ class DownloadUtil @Inject constructor(
         if (isProcessingDownloads.value) return
         isProcessingDownloads.value = true
         try {
+            val activeDownloads = downloads.value.filterValues { it == STATE_DOWNLOADING }
             val databaseDownloads = database.downloadedOrQueuedSongs().first()
-            val missing = localMgr.getMissingFiles(
-                databaseDownloads.filter { it.song.dateDownload != null }
-            )
-            database.transaction {
-                missing.forEach { removeDownloadSong(it.song.id) }
+            val foundIds = if (localMgr.allDirs.isEmpty()) {
+                emptySet()
+            } else {
+                localMgr.getAvailableFiles(false).keys
             }
-            val foundIds = localMgr.getAvailableFiles(false).keys
-            downloads.value = databaseDownloads
-                .filter { it.song.dateDownload != null && it.song.id in foundIds }
+            if (localMgr.allDirs.isNotEmpty()) {
+                val missing = databaseDownloads.filter {
+                    it.song.dateDownload != null && it.song.id !in foundIds && downloads.value[it.song.id] != STATE_DOWNLOADING
+                }
+                database.transaction { missing.forEach { removeDownloadSong(it.song.id) } }
+            }
+            downloads.value = activeDownloads + databaseDownloads
+                .filter { it.song.dateDownload != null && (localMgr.allDirs.isEmpty() || it.song.id in foundIds) }
                 .associate { it.song.id to it.song.dateDownload!! }
         } finally {
             isProcessingDownloads.value = false

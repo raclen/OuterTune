@@ -68,6 +68,8 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 
+private const val MIN_LOCAL_AUDIO_DURATION_SECONDS = 30
+
 class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
     private val TAG = LocalMediaScanner::class.simpleName.toString()
     private var advancedScannerImpl: MetadataScanner = when (scannerImpl) {
@@ -213,22 +215,26 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
         scannerState.value = 3
         scannerProgressCurrent.value = 0
         scannerProgressProbe.value = 0
+        val eligibleSongs = newSongs.filter { it.song.song.duration >= MIN_LOCAL_AUDIO_DURATION_SECONDS }
+        if (eligibleSongs.size != newSongs.size) {
+            Log.i(TAG, "过滤 ${newSongs.size - eligibleSongs.size} 个时长少于 ${MIN_LOCAL_AUDIO_DURATION_SECONDS} 秒的本地音频")
+        }
         // deduplicate
         val finalSongs = ArrayList<SongTempData>()
         if (strictFilePaths) {
-            finalSongs.addAll(newSongs)
+            finalSongs.addAll(eligibleSongs)
         } else {
-            newSongs.forEach { song ->
+            eligibleSongs.forEach { song ->
                 if (finalSongs.none { s -> compareSong(song.song, s.song, matchStrength, strictFileNames) }) {
                     finalSongs.add(song)
                 }
             }
         }
-        Log.d(TAG, "Entries to process: ${newSongs.size}. After dedup: ${finalSongs.size}")
+        Log.d(TAG, "Entries to process: ${eligibleSongs.size}. After dedup: ${finalSongs.size}")
         scannerProgressTotal.value = finalSongs.size
-        val mod = if (newSongs.size < 200) {
+        val mod = if (eligibleSongs.size < 200) {
             30
-        } else if (newSongs.size < 800) {
+        } else if (eligibleSongs.size < 800) {
             70
         } else {
             140
@@ -903,6 +909,12 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
                 continue
             }
 
+            if (song.song.duration < MIN_LOCAL_AUDIO_DURATION_SECONDS) {
+                if (SCANNER_DEBUG) Log.v(TAG, "过滤短音频 ${song.song.localPath}")
+                database.disableLocalSong(song.song.id)
+                continue
+            }
+
             // new songs is all songs that are known to be valid
             // delete all songs in the DB that do not match a path
             if (newSongs.none { it == song.song.localPath }) {
@@ -926,6 +938,12 @@ class LocalMediaScanner(val context: Context, scannerImpl: ScannerImpl) {
         // disable if not in directory anymore
         for (song in allSongs) {
             if (song.song.localPath == null) {
+                continue
+            }
+
+            if (song.song.duration < MIN_LOCAL_AUDIO_DURATION_SECONDS) {
+                if (SCANNER_DEBUG) Log.v(TAG, "过滤短音频 ${song.song.localPath}")
+                database.disableLocalSong(song.song.id)
                 continue
             }
 
