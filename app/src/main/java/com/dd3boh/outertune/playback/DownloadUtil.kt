@@ -14,6 +14,7 @@ import com.dd3boh.outertune.models.MediaMetadata
 import com.dd3boh.outertune.models.toMediaMetadata
 import com.dd3boh.outertune.playback.downloadManager.DownloadDirectoryManagerOt
 import com.dd3boh.outertune.playback.downloadManager.DownloadEvent
+import com.dd3boh.outertune.playback.downloadManager.DownloadHttpException
 import com.dd3boh.outertune.playback.downloadManager.DownloadManagerOt
 import com.dd3boh.outertune.source.lx.LxSourceRuntime
 import com.dd3boh.outertune.utils.dataStore
@@ -31,10 +32,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -43,10 +44,12 @@ import javax.inject.Singleton
 class DownloadUtil @Inject constructor(
     @ApplicationContext private val context: Context,
     val database: MusicDatabase,
+    private val metadataWriter: DownloadedMetadataWriter,
 ) {
     private val tag = DownloadUtil::class.simpleName.orEmpty()
     val downloads = MutableStateFlow<Map<String, LocalDateTime>>(emptyMap())
     var isProcessingDownloads = MutableStateFlow(false)
+    private val pendingDownloadRequests = ConcurrentHashMap<String, PendingDownloadRequest>()
 
     var localMgr = DownloadDirectoryManagerOt(
         context,
@@ -180,26 +183,34 @@ class DownloadUtil @Inject constructor(
         }
 
         val quality = context.dataStore.get(DownloadQualityKey, DEFAULT_DOWNLOAD_QUALITY)
+        pendingDownloadRequests[song.id] = PendingDownloadRequest(song, downloadQualityFallbacks(quality))
         downloads.update { it + (song.id to STATE_DOWNLOADING) }
+        startDownload(song.id)
+    }
+
+    private fun startDownload(mediaId: String) {
+        val pending = pendingDownloadRequests[mediaId] ?: return
         CoroutineScope(dlCoroutine).launch {
             try {
-                database.transaction { insert(song) }
-                val streamUrl = LxSourceRuntime.resolve(song, qualityOverride = quality)
+                database.transaction { insert(pending.song) }
+                val quality = pending.currentQuality
+                val streamUrl = LxSourceRuntime.resolve(pending.song, qualityOverride = quality)
                 downloadMgr.enqueue(
-                    mediaId = song.id,
+                    mediaId = mediaId,
                     url = streamUrl,
-                    displayName = song.title,
+                    displayName = pending.song.title,
                     fileExtension = downloadFileExtension(quality),
                 )
             } catch (error: Throwable) {
                 reportException(error)
-                markDownloadFailed(song.id)
+                if (!retryDownload(mediaId, error)) markDownloadFailed(mediaId)
             }
         }
     }
 
     private fun deleteSong(id: String): Boolean {
         val wasPending = downloads.value[id] == STATE_DOWNLOADING
+        pendingDownloadRequests.remove(id)
         downloadMgr.cancel(id)
         val deleted = localMgr.deleteFile(id)
         downloads.update { it - id }
@@ -207,9 +218,16 @@ class DownloadUtil @Inject constructor(
         return deleted || wasPending
     }
 
-    private fun handleDownloadSuccess(mediaId: String, uri: android.net.Uri) {
+    private suspend fun handleDownloadSuccess(mediaId: String, uri: android.net.Uri) {
         val downloadedAt = LocalDateTime.now()
         val file = fileFromUri(context, uri)
+        val song = pendingDownloadRequests[mediaId]?.song
+            ?: database.song(mediaId).first()?.toMediaMetadata()
+        if (file != null && song != null) {
+            runCatching { metadataWriter.write(file, song) }
+                .onFailure { reportException(it) }
+        }
+        pendingDownloadRequests.remove(mediaId)
         database.transaction {
             if (file != null) {
                 registerDownloadSong(mediaId, downloadedAt, file.absolutePath)
@@ -221,8 +239,19 @@ class DownloadUtil @Inject constructor(
     }
 
     private fun markDownloadFailed(mediaId: String) {
+        pendingDownloadRequests.remove(mediaId)
         downloads.update { it - mediaId }
         database.transaction { updateDownloadStatus(mediaId, null) }
+    }
+
+    private fun retryDownload(mediaId: String, error: Throwable): Boolean {
+        if (error !is DownloadHttpException || error.responseCode != HTTP_NOT_FOUND) return false
+        val pending = pendingDownloadRequests[mediaId] ?: return false
+        if (!pending.moveToNextQuality()) return false
+
+        Log.w(tag, "下载地址返回 404，改用 ${pending.currentQuality} 重试：$mediaId")
+        startDownload(mediaId)
+        return true
     }
 
     init {
@@ -235,7 +264,9 @@ class DownloadUtil @Inject constructor(
                         }
                     }
                     is DownloadEvent.Success -> handleDownloadSuccess(event.mediaId, event.file)
-                    is DownloadEvent.Failure -> markDownloadFailed(event.mediaId)
+                    is DownloadEvent.Failure -> {
+                        if (!retryDownload(event.mediaId, event.error)) markDownloadFailed(event.mediaId)
+                    }
                 }
             }
         }
@@ -244,10 +275,35 @@ class DownloadUtil @Inject constructor(
 
     companion object {
         val STATE_DOWNLOADING: LocalDateTime = Instant.ofEpochMilli(1).atZone(ZoneOffset.UTC).toLocalDateTime()
+        private const val HTTP_NOT_FOUND = 404
     }
 }
 
 private const val DEFAULT_DOWNLOAD_QUALITY = "320k"
+
+private class PendingDownloadRequest(
+    val song: MediaMetadata,
+    private val qualities: List<String>,
+) {
+    private var qualityIndex = 0
+
+    val currentQuality: String
+        get() = qualities[qualityIndex]
+
+    @Synchronized
+    fun moveToNextQuality(): Boolean {
+        if (qualityIndex >= qualities.lastIndex) return false
+        qualityIndex++
+        return true
+    }
+}
+
+private fun downloadQualityFallbacks(quality: String): List<String> = when (quality) {
+    "flac24bit" -> listOf("flac24bit", "flac", "320k", "128k")
+    "flac" -> listOf("flac", "320k", "128k")
+    "320k" -> listOf("320k", "128k")
+    else -> listOf("128k")
+}
 
 private fun downloadFileExtension(quality: String): String =
     if (quality == "flac" || quality == "flac24bit") ".flac" else ".mp3"

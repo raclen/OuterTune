@@ -16,6 +16,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.contentOrNull
@@ -68,7 +69,8 @@ object LxSourceRuntime {
         val source = metadata.source ?: error("歌曲缺少洛雪来源信息")
         val musicInfo = metadata.sourceData?.let { lxJson.parseToJsonElement(it).jsonObject }
             ?: error("歌曲缺少洛雪音源参数")
-        val quality = qualityOverride ?: appContext.dataStore.get(LxSourceQualityKey, DEFAULT_QUALITY)
+        val requestedQuality = qualityOverride ?: appContext.dataStore.get(LxSourceQualityKey, DEFAULT_QUALITY)
+        val quality = selectSupportedQuality(musicInfo, requestedQuality)
         val requestKey = UUID.randomUUID().toString()
         val deferred = CompletableDeferred<JsonObject>()
         pending[requestKey] = deferred
@@ -233,6 +235,17 @@ object LxSourceRuntime {
         thread = null
         handler = null
         loadedScriptHash = null
+    }
+
+    private fun selectSupportedQuality(info: JsonObject, requested: String): String {
+        val metadata = runCatching { lxJson.decodeFromString<LxMusicInfo>(info.toString()) }.getOrNull()
+        val supported = metadata?.meta?.qualitys.orEmpty().map { it.type }
+            .plus(metadata?.meta?._qualitys?.keys.orEmpty())
+            .filter(String::isNotBlank)
+            .distinct()
+        return requested.takeIf { it in supported }
+            ?: supported.firstOrNull()
+            ?: requested
     }
 
     private fun String.sha256() = MessageDigest.getInstance("SHA-256")

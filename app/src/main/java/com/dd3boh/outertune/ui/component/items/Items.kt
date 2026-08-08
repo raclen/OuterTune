@@ -345,7 +345,7 @@ fun MediaMetadataListItem(
     },
     thumbnailContent = {
         ItemThumbnail(
-            thumbnailUrl = mediaMetadata.thumbnailUrl,
+            thumbnailUrl = mediaMetadata.localPath ?: mediaMetadata.thumbnailUrl,
             preferredSize = preferredSize,
             isActive = isActive,
             isPlaying = isPlaying,

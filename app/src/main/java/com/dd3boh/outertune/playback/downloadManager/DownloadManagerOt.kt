@@ -22,6 +22,8 @@ sealed class DownloadEvent {
     data class Failure(val mediaId: String, val error: Throwable) : DownloadEvent()
 }
 
+class DownloadHttpException(val responseCode: Int) : IOException("HTTP $responseCode")
+
 class DownloadManagerOt(
     private val local: DownloadDirectoryManagerOt,
     private val httpClient: OkHttpClient = OkHttpClient(),
@@ -59,7 +61,7 @@ class DownloadManagerOt(
                 calls[mediaId] = call
                 call.execute().use { resp ->
                     if (!resp.isSuccessful) {
-                        throw IllegalStateException("HTTP ${resp.code}")
+                        throw DownloadHttpException(resp.code)
                     }
                     val body = resp.body
                     val total = body.contentLength()
