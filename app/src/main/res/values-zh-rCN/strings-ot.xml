@@ -79,7 +79,9 @@
     <string name="scan_paths_tooltip">所有子目录也将受到影响</string>
     <string name="scan_paths_add_folder">添加新文件夹</string>
     <string name="scan_paths_incl">扫描路径</string>
+    <string name="scan_paths_incl_description">选择要扫描的本地歌曲文件夹</string>
     <string name="scan_paths_excl">排除的扫描路径</string>
+    <string name="scan_paths_excl_description">选择不参与扫描的文件夹</string>
     <string name="scanner_local_title">本地扫描</string>
     <string name="scanner_manual_btn">触发手动同步</string>
     <string name="scanner_missing_ffmpeg">未检测到 FFmpeg 提取器</string>

@@ -368,11 +368,20 @@ fun ColumnScope.LocalScannerFrag() {
         }
     }
 
-    // file path selector
+    // file path selectors
     PreferenceEntry(
-        title = { Text(stringResource(R.string.scan_paths_title)) },
+        title = { Text(stringResource(R.string.scan_paths_incl)) },
+        description = stringResource(R.string.scan_paths_incl_description),
         onClick = {
             showAddFolderDialog = true
+        },
+    )
+
+    PreferenceEntry(
+        title = { Text(stringResource(R.string.scan_paths_excl)) },
+        description = stringResource(R.string.scan_paths_excl_description),
+        onClick = {
+            showAddFolderDialog = false
         },
     )
 
