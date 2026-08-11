@@ -107,7 +107,6 @@ import com.dd3boh.outertune.constants.DEFAULT_ENABLED_TABS
 import com.dd3boh.outertune.constants.DownloadPathKey
 import com.dd3boh.outertune.constants.EnabledFiltersKey
 import com.dd3boh.outertune.constants.EnabledTabsKey
-import com.dd3boh.outertune.constants.LibraryFilterKey
 import com.dd3boh.outertune.constants.LocalLibraryEnableKey
 import com.dd3boh.outertune.constants.MaxSongCacheSizeKey
 import com.dd3boh.outertune.constants.NavigationBarHeight
@@ -122,13 +121,11 @@ import com.dd3boh.outertune.ui.component.SwitchPreference
 import com.dd3boh.outertune.ui.component.button.IconLabelButton
 import com.dd3boh.outertune.ui.dialog.ActionPromptDialog
 import com.dd3boh.outertune.ui.dialog.InfoLabel
-import com.dd3boh.outertune.ui.screens.Screens.LibraryFilter
 import com.dd3boh.outertune.ui.screens.settings.fragments.LocalScannerFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.LocalizationFrag
 import com.dd3boh.outertune.ui.screens.settings.fragments.ThemeAppFrag
 import com.dd3boh.outertune.utils.dlCoroutine
 import com.dd3boh.outertune.utils.formatFileSize
-import com.dd3boh.outertune.utils.rememberEnumPreference
 import com.dd3boh.outertune.utils.rememberPreference
 import com.dd3boh.outertune.utils.scanners.stringFromUriList
 import com.dd3boh.outertune.utils.scanners.uriListFromString
@@ -147,10 +144,6 @@ fun SetupWizard(
     val uriHandler = LocalUriHandler.current
 
     var oobeStatus by rememberPreference(OobeStatusKey, defaultValue = 0)
-
-    // content prefs
-    var filter by rememberEnumPreference(LibraryFilterKey, LibraryFilter.ALL)
-
 
     // local media prefs
     val (localLibEnable, onLocalLibEnableChange) = rememberPreference(LocalLibraryEnableKey, defaultValue = true)
@@ -174,7 +167,11 @@ fun SetupWizard(
 
     BackHandler {
         if (oobeStatus > 0) {
-            oobeStatus -= 1
+            oobeStatus = when (oobeStatus) {
+                2 -> 0
+                4 -> 2
+                else -> oobeStatus - 1
+            }
         } else {
             // user may not dismiss via back
         }
@@ -191,7 +188,11 @@ fun SetupWizard(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable {
                     if (oobeStatus > 0) {
-                        oobeStatus -= 1
+                        oobeStatus = when (oobeStatus) {
+                            2 -> 0
+                            4 -> 2
+                            else -> oobeStatus - 1
+                        }
                     }
                     haptic.performHapticFeedback(HapticFeedbackType.ContextClick)
                 }
@@ -223,11 +224,9 @@ fun SetupWizard(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.clickable {
-                    if (oobeStatus == 1) {
-                        filter = LibraryFilter.ALL // hax
-                    }
-
-                    if (oobeStatus < OOBE_VERSION) {
+                    if (oobeStatus == 2) {
+                        oobeStatus = OOBE_VERSION - 1
+                    } else if (oobeStatus < OOBE_VERSION) {
                         oobeStatus += 1
                     }
 
@@ -289,7 +288,14 @@ fun SetupWizard(
             ) {
                 Spacer(Modifier.height(WindowInsets.systemBars.asPaddingValues().calculateTopPadding() + 16.dp))
 
-                when (oobeStatus) {
+                // 首次使用只保留欢迎、本地媒体和完成三步；下载与缓存设置移至设置页按需配置。
+                when (
+                    when {
+                        oobeStatus == 1 -> 2
+                        oobeStatus == 3 -> OOBE_VERSION
+                        else -> oobeStatus
+                    }
+                ) {
                     0 -> { // landing page
                         Image(
                             painter = painterResource(R.drawable.launcher_monochrome),
@@ -772,7 +778,7 @@ fun SetupWizard(
                         .align(Alignment.BottomEnd),
                     onClick = {
                         if (oobeStatus == 0) {
-                            oobeStatus += 1
+                            oobeStatus = 2
                         } else {
                             oobeStatus = OOBE_VERSION
                             navController.navigateUp()
